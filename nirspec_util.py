@@ -131,8 +131,8 @@ class Nirspec_bookkeeping(object):
             pf.writeto(allreduceobj.outpath+allreduceobj.sciname+'rectified_order'+str(order_num)+'.fits',sciorder.rectified,allreduceobj.sciheader, output_verify='warn',clobber=True)
                 
         if True:
-            if not traceobj.traced_bot: traceobj.cb=0
-            if not traceobj.traced_top: traceobj.ct=0
+            if not traceobj.traced_bot: traceobj.bottom_spectroid=0
+            if not traceobj.traced_top: traceobj.top_spectroid=0
         
             pl.figure(18)
             pl.clf()
@@ -141,9 +141,9 @@ class Nirspec_bookkeeping(object):
             pl.plot(10,traceobj.lhs_top,'g*')
             pl.plot(10,traceobj.lhs_top_theory,'r+')
             pl.plot(10,traceobj.lhs_bot_theory,'r+')    
-            pl.plot(traceobj.cm,'k',lw=2)            
-            pl.plot(traceobj.ct,'g',lw=2)
-            pl.plot(traceobj.cb,'g',lw=2)
+            pl.plot(traceobj.avg_spectroid,'k',lw=2)            
+            pl.plot(traceobj.top_spectroid,'g',lw=2)
+            pl.plot(traceobj.bottom_spectroid,'g',lw=2)
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'allflat'+str(order_num)+'.png',bbox_inches=0)       
                             
@@ -155,8 +155,8 @@ class Nirspec_bookkeeping(object):
             pl.plot(10,traceobj.lhs_top_theory,'r+')
             pl.plot(10,traceobj.lhs_bot_theory,'r+')    
             #pl.plot(cm,'k')            
-            pl.plot(traceobj.ct,'g')
-            pl.plot(traceobj.cb,'g')
+            pl.plot(traceobj.top_spectroid,'g')
+            pl.plot(traceobj.bottom_spectroid,'g')
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'allsci'+str(order_num)+'.png',bbox_inches=0)       
              

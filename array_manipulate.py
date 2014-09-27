@@ -268,7 +268,8 @@ class SciArray(BaseArray):
     def setup_extraction_ranges(self, ext_height, sky_distance, sky_height, 
                                 peak, order, logger):     
  
-       
+        print 'ext_height=',ext_height
+        
         if ext_height % 2: #odd values typically across the continuum - recall range(-1, 2) is (-1, 0, 1)
             ext_range = range(int((1-ext_height)/2.), int((ext_height+1)/2.))
         else: #even
@@ -278,11 +279,17 @@ class SciArray(BaseArray):
         # sky_distance
         sky_range_top = range(ext_range[-1]+sky_distance, ext_range[-1]+sky_distance+sky_height) # [6, 7, 8, 9, 10]
         sky_range_bot = range(ext_range[0]-sky_distance-sky_height+1, ext_range[0]-sky_distance+1) # [-10, -9, -8, -7, -6]
- 
- 
+        print 'extrange=',ext_range[0]
+        print 'sky_d=',sky_distance
+        print 'sky_height = ',sky_height
+        
+        print 'peak=',peak
         if ((peak+sky_range_bot[-1]+1) > self.data.shape[0]) or ((peak+sky_range_bot[0]) < 0):
             logger.error(' bottom sky range '+str(sky_range_bot)+' outside of order')
-            logger.error('    trying smaller sky range and distance')        
+            logger.error('    trying smaller sky range and distance')    
+            print 'peak=',peak
+            print 'sky_range_bot=',sky_range_bot
+            print 'shape=',self.data.shape[0]
             sky_distance = min ( peak - sky_range_bot, self.data.shape[0] - peak) 
             sky_height = 2
             
@@ -421,6 +428,7 @@ class FlatArray(BaseArray):
         normalized = data_on / flat_mean
         
         # around the edges of the order can blow up when div by mean, set those to one
+        print 'normalized=',normalized
         normalized[np.where(normalized > 10.0)] = 1.0 
         
         # avoid zeroes
