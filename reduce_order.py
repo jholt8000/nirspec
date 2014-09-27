@@ -47,7 +47,8 @@ def reduce_order(reduction, sciobj, flatobj):
     flatobj: object
         The flat array object, contains flatoj.data
     '''
-    ### make class? ###
+    ### make class? attributes could be padding and dx as those change throughout ###
+    
     order_data=[]
     found_wavelength=False
 
@@ -204,7 +205,8 @@ def reduce_order(reduction, sciobj, flatobj):
         
         ## find and apply wavelength shift ###
         
-        # Read in the sky line list. sets lineobj.ohx, lineobj.ohy, skyline 
+        # Read in the sky line list. sets lineobj.ohx, lineobj.ohy
+        # skyline 
         # list is determined using low_disp and fudge_constants ohlinelist
         lineobj.read_OH()
         
