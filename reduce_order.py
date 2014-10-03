@@ -76,7 +76,7 @@ def reduce_order(reduction, sciobj, flatobj):
         # return to main reduction and skip this order
         return order_data, traceobj.lhs_top
 
-    padding = traceobj.padding
+    # padding = reductionobj.data_dict['padding']
     
     ## cut out order and spatially rectify #### 
     if traceobj.trace_success:
@@ -87,16 +87,27 @@ def reduce_order(reduction, sciobj, flatobj):
         ### include padding on the top and bottom to ensure order is on the cutout
         ### array and to avoid cutting into the science when order is straightened
         
-        print 'padding=',padding
-        print 'lhsbot,lhstop',traceobj.lhs_bot, traceobj.highest_top
+        traceobj.fudge_padding()
+        # if abs(traceobj.cm[0] - traceobj.cm[-1]) > 20.:
+            #padding=padding+10.
+        # if abs(traceobj.cm[0] - traceobj.cm[-1]) > 40.:
+            #padding=padding+10.
+
         # sets sciobj.order_slice that contains only the cutout around the order
-        sciobj.cut_out(padding = padding, lower = traceobj.lhs_bot, 
+        sciobj.cut_out(padding = traceobj.padding, lower = traceobj.lhs_bot, 
                        upper = traceobj.highest_top)
          
         # sets flatobj.order_slice that contains only the cutout around the order          
-        flatobj.cut_out(padding = padding, lower = traceobj.lhs_bot, 
+        flatobj.cut_out(padding = traceobj.padding, lower = traceobj.lhs_bot, 
                         upper = traceobj.highest_top)
-                                              
+                        
+        traceobj.shift_order()
+        # if traceobj.cb[0] > padding:
+            # traceobj.ct = traceobj.ct - traceobj.cb[0] + padding
+            # traceobj.cm = traceobj.cm - traceobj.cb[0] + padding
+            # traceobj.cb = traceobj.cb - traceobj.cb[0] + padding
+            #cbplotfix=True
+            
         #make instances of array manip class using just the order slice
         sciorder = array_manipulate.SciArray(sciobj.order_slice)
         flatorder = array_manipulate.FlatArray(flatobj.order_slice)
@@ -157,15 +168,19 @@ def reduce_order(reduction, sciobj, flatobj):
     sciorder.find_peak(order_rectified)
         
     # sets sciorder.ext_range, sciorder.sky_range_bot, sciorder.sky_range_top      
-    sciorder.setup_extraction_ranges(reduction.ext_height, reduction.sky_distance, 
+    try:
+        sciorder.setup_extraction_ranges(reduction.ext_height, reduction.sky_distance, 
                                          reduction.sky_height, sciorder.peak, reduction.order_num, 
                                          reduction.logger)
-           
+    except:
+        reduction.logger.info('WARNING: could not find correct locations for continuum and sky')
+        reduction.logger.info('         and therefore not extracting continuum ')
+        return order_data, traceobj.lhs_top        
     ### Horizontal order rectification ###
     
     # sets sciorder.sky_line to use in rectification using sky lines       
     sciorder.find_skyline_trace(sky_sigma = reduction.sky_sigma, 
-                                           padding=padding)
+                                           padding=traceobj.padding)
 
     try: 
         sky_line_fit, foo = astro_math.fit_poly(sciorder.sky_line, 

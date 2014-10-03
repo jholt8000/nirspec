@@ -19,6 +19,7 @@ class Trace_order_utils(object):
         self.flatobj = flatobj
         self.sciobj = sciobj
         self.trace_success = False
+        self.padding=reduction.data_dict['padding']
     
     def trace_order(self):
 
@@ -116,12 +117,9 @@ class Trace_order_utils(object):
             self.lhs_top = self.lhs_top_theory
         
         if self.trace_success:
-            #self.fudge_padding()
             self.smooth_spectroid()
-            self.shift_order()
             
         else:
-            self.order_shifted = False
             self.padding=0
             
         if self.avg_spectroid.any(): self.trace_success = True

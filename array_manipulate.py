@@ -267,7 +267,23 @@ class SciArray(BaseArray):
 
     def setup_extraction_ranges(self, ext_height, sky_distance, sky_height, 
                                 peak, order, logger):     
- 
+        '''  use the traces of the orders to make on and off order arrays  
+         Used primarily to mask out the array data before normalizing or dividing   
+         Parameters
+         ----------
+         ext_height: todo
+         sky_distance: todo
+         sky_height: todo
+         peak: todo
+         order: order number
+         logger: logging util
+         Sets
+         ----------
+         self.ext_range 
+         self.sky_range_bot 
+         self.sky_range_top
+        '''
+        
         print 'ext_height=',ext_height
         
         if ext_height % 2: #odd values typically across the continuum - recall range(-1, 2) is (-1, 0, 1)
@@ -290,7 +306,7 @@ class SciArray(BaseArray):
             print 'peak=',peak
             print 'sky_range_bot=',sky_range_bot
             print 'shape=',self.data.shape[0]
-            sky_distance = min ( peak - sky_range_bot, self.data.shape[0] - peak) 
+            sky_distance = min ( peak - sky_range_bot[0], self.data.shape[0] - peak) 
             sky_height = 2
             
             if ext_range[0]-sky_distance+1 < self.data.shape[0]:
