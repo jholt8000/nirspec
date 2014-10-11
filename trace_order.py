@@ -123,10 +123,10 @@ class Trace_order_utils(object):
             # ensure we do not interpolate into the continuum.  
             ### This should be elsewhere ###
             if abs(self.cm[0]-self.cm[-1]) > 20.:
-                self.reductionobj.padding += 10. 
+                self.reductionobj.padding = self.reductionobj.padding + 10. 
                 
             if abs(self.cm[0]-self.cm[-1]) > 40.:
-                self.reductionobj.padding += 10.
+                    self.reductionobj.padding = self.reductionobj.padding + 10.
                        
     def smooth_spectroid(self):
             self.reductionobj.logger.info('fitting a polynomial function from spectroid ')
@@ -156,8 +156,8 @@ class Trace_order_utils(object):
             self.ct=self.ct - self.reductionobj.padding + self.lhs_bot
             
     def determine_lhs_edge_pos(self, edges, theory_lhs, data_dict):
-        """  find location of either top or bottom of the order using theoretical position
-        as a starting point """        
+        '''  find location of either top or bottom of the order using theoretical position
+        as a starting point '''        
         # Find the peaks in the shifted/subracted flat file near the theoretical peaks
         lhs_edge_pos = self.reductionobj.nh.get_actual_order_pos(edges, theory_lhs, 
                                           data_dict['threshold'])
@@ -170,7 +170,7 @@ class Trace_order_utils(object):
                                        data_dict['order_threshold'])
 
         if not found_edge:
-            """ lower threshold and try again """
+            ''' lower threshold and try again '''
             self.reductionobj.logger.info('searching for top edge on a fainter flat')
             self.reductionobj.logger.info('  ---> this might affect the rectification')
             
