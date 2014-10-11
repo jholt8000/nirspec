@@ -13,8 +13,6 @@ import array_manipulate
 reload(array_manipulate)
 import nirspec_wavelength_utils
 reload(nirspec_wavelength_utils)
-import robust
-reload(robust)
 
 import trace_order
 reload(trace_order)
@@ -31,7 +29,7 @@ except:
 # out better
         
 def reduce_order(reduction, sciobj, flatobj):
-    '''
+    """
     redue each order found
     Parameters:
     --------------
@@ -46,9 +44,10 @@ def reduce_order(reduction, sciobj, flatobj):
         The science array object, contains sciobj.data array
     flatobj: object
         The flat array object, contains flatoj.data
-    '''
+    """
     ### make class? attributes could be padding and dx as those change throughout ###
-    
+
+    global sky_line_fit
     order_data=[]
     found_wavelength=False
 
@@ -62,7 +61,7 @@ def reduce_order(reduction, sciobj, flatobj):
     
     # find order position on detector #### 
     
-    # Use's grating eqn empirical fitting to determine the theoretical 
+    # Use grating eqn empirical fitting to determine the theoretical 
     # starting location of the top and bottom of order as well as 
     # starting wavelengths for that order. 
     #  lhs_bot_theory,lhs_top_theory, dx, lhs_bot, lhs_top,bottom_spectroid,
@@ -74,7 +73,7 @@ def reduce_order(reduction, sciobj, flatobj):
     if not traceobj.trace_success:    
         reduction.logger.info('order '+str(reduction.order_num)+' not on array')
         # return to main reduction and skip this order
-        return order_data, traceobj.lhs_top
+        return order_data
 
     padding = reduction.data_dict['padding']
     ## cut out order and spatially rectify #### 
@@ -138,10 +137,7 @@ def reduce_order(reduction, sciobj, flatobj):
     else: # could not find fit along flat order edge              
         reduction.logger.info('WARNING: did not find a good order fit, not rectifying spatially ')
         reduction.logger.info('         and therefore not extracting continuum ')
-        do_extract = False
-        order_rectified = False
-        return order_data, traceobj.lhs_top
-
+        return order_data
         
     ## determine sky and continuum locations  #### 
     
@@ -186,22 +182,22 @@ def reduce_order(reduction, sciobj, flatobj):
     #Gain = 4 e- / ADU  and readnoise = 625 e- = 156 ADU
     if do_extract:      
         
-        # sets sciorder.cont, sciorder.skys, sciorder.extract_status        
+        # sets sciorder.cont, sciorder.sky, sciorder.extract_status        
         sciorder.sum_extract(sciorder.ext_range, sciorder.sky_range_bot, 
                              sciorder.sky_range_top)
                              
         if sciorder.extract_status ==  0:
             reduction.logger.error('could not extract order '+str(reduction.order_num))
 
-            return order_data, traceobj.lhs_top
+            return order_data
 
             
         # identify sky lines with catalogue sky line locations
 
         #### Wavelength skyline identification ######## 
-        lineobj = nirspec_wavelength_utils.Line_id(reduction.low_disp,
+        lineobj = nirspec_wavelength_utils.LineId(reduction.low_disp,
                                                       sciorder.dx, 
-                                                      sciorder.skys)
+                                                      sciorder.sky)
         #Test commit
         ## find and apply wavelength shift ###
         
@@ -213,7 +209,7 @@ def reduce_order(reduction, sciobj, flatobj):
         # make a synthetic sky spectrum using line list information with width
         # the size of the data and with sigma = 0.2 (found empirically)
         # sets lineobj.fake_sky
-        lineobj.gaussOH(lineobj.ohx, lineobj.ohy, 0.2)
+        lineobj.gauss_sky(lineobj.ohx, lineobj.ohy, 0.2)
                                                  
         # Cross correlate data: lineobj.dx and lineobj.fake_sky
         # with the synthetic sky, makes lineobj.lambda_shift 
@@ -240,8 +236,7 @@ def reduce_order(reduction, sciobj, flatobj):
                 reduction.logger.info('removed the shift since sky is unreliable : '+str(-lineobj.lambda_shift))   
                 reduction.logger.error('Could not find sky lines: only doing zeroith order wavelength calibration ')
                 found_wavelength=False
-        
-            
+
         else:
             # find the solution between current zeroith order solution and real lambda
             #foo, (disp,offset) = astro_math.fit_poly(lineobj.matchesohx, xes=lineobj.matchesdx, deg=1, cutoff=False)
@@ -253,7 +248,7 @@ def reduce_order(reduction, sciobj, flatobj):
             reduction.logger.info('linear solution bw matches disp='+str(disp)+' offset ='+str(offset))
             
             # if the matches between theory and sky line list are too far off from a linear fit, dont use matches
-            if abs(disp) < Nirspec_fudge_constants.disp_upper_limit and abs(disp) > Nirspec_fudge_constants.disp_lower_limit: 
+            if Nirspec_fudge_constants.disp_upper_limit > abs(disp) > Nirspec_fudge_constants.disp_lower_limit: 
                 found_wavelength=True
                 #astro_math.order_wavelength_solution(lineobj.matchesdx, lineobj.matchesohx, sciorder.dx, order)
 
@@ -261,11 +256,8 @@ def reduce_order(reduction, sciobj, flatobj):
                 reduction.logger.error('bad fit: only doing zeroith order wavelength calibration ')
                 found_wavelength=False
 
-
         #need to store all the pre-wavelength fixed data to make out files
 
         order_data=([reduction.order_num, sciorder, lineobj, flatobj, traceobj, found_wavelength])
 
-
-                            
-    return order_data, traceobj.lhs_top
+    return order_data

@@ -12,26 +12,20 @@ import scipy.optimize
 from mpl_toolkits.mplot3d import Axes3D 
 import numpy as np
 
-
 ##****************************************************************************** 
-##****************************************************************************** 
-
-
-
+##******************************************************************************
 ##------------------------------------------------------------------------------ 
 def __residual(params, f, x, y): 
-    ''' 
+    """ 
     Define fit function; 
     Return residual error. 
-    ''' 
+    """ 
     a0, a1, a2, a3, a4, a5 = params 
     return np.ravel(a0 + a1*x + a2*x**2 + a3*y + a4*x*y + a5*(x**2)*y - f)
-
 
 def __residual_linear(params, f, x, y):
     a0, a1, a2 = params 
     return np.ravel(a0 + a1*x + a2*y - f)
-        
 
 def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
 #    dataX = np.array([47, 347, 561, 565, 174, 240, 339, 360, 454, 479, 517, 648, 
@@ -140,15 +134,11 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
             datax_forplot[residuals.argmax()] = datax_forplot[residuals.argmin()]
             datay_forplot[residuals.argmax()] = datay_forplot[residuals.argmin()]
 
-            
             dataZ = np.delete(dataZ, residuals.argmax())
             dataX = np.delete(dataX, residuals.argmax())
             dataY = np.delete(dataY, residuals.argmax())
-            
 
-            
         elif sigma > sigma_max:
-
             logger.info('cannot remove more points! we must live with sigma='+str(sigma))
             break
         
@@ -166,8 +156,6 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     pl.figure(15)
     pl.clf()
     pl.plot(newoh, dataZ,'b.',newoh,dataZ,'b')
-
-
 
     ## plot data 
 #    pylab.close('all') 

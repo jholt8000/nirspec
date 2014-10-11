@@ -6,15 +6,15 @@ Created on Wed Apr 09 14:23:52 2014
 @author: jholt
 """
 import pyfits as pf
-
-#import astropy.io.fits
+from astropy.io import fits
 
 class Handle_fits():
     
     @staticmethod
     def get_array_and_header(file1):
         if isinstance(file1,str):
-            data, hdr = pf.getdata(file1, 0, header=True, ignore_missing_end=True, verify='ignore')
+            data, hdr = fits.getdata(file1, 0, header=True, ignore_missing_end=True, verify='ignore', mode='readonly')
+            #data, hdr = pf.getdata(file1, 0, header=True, ignore_missing_end=True, verify='ignore')
             filename = file1
         else: 
             # allowing duck typing after that
@@ -26,8 +26,7 @@ class Handle_fits():
         filename = filename.rstrip('.fits')
         if len(filename.split('/')) > 1: 
             filename = filename.split('/')[-1]  
-            
-            
+
         return data, hdr, filename
     
 
