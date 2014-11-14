@@ -8,9 +8,9 @@ import logging, os
 import numpy as np
 
 import pylab as pl
-import pyfits as pf
+#import pyfits as pf
 
-class Nirspec_bookkeeping(object):
+class NirspecBookkeeping(object):
     '''
     a collection of methods that handle the bookkeeping details of a nirspec specific reduction
     Parameters:
@@ -214,7 +214,7 @@ class Nirspec_bookkeeping(object):
         return logger
     
 
-class Nirspec_header(object):
+class NirspecHeader(object):
     '''
     A collection of methods that deal with NIRSPEC header bookeeping and
     creation of tables for order locations based on header keywords.
@@ -230,7 +230,6 @@ class Nirspec_header(object):
         '''
         # if tall orders and low filter, do not pad for interpolated shift
         # padding around order before rectification, ensures interp shift doesn't cut into data
-    
         if '0.288x24' in self.header['slitname']:
             padding_modify = 0.0
         else:
@@ -259,7 +258,8 @@ class Nirspec_header(object):
         else:
             data_dict['order_threshold'] = 40
             data_dict['order_threshold_faint_flat'] = 40
-            
+        
+        print 'data_dict1=',data_dict
         return data_dict        
 
     def get_theory_order_pos(self, order, A_to_mu=True):

@@ -61,8 +61,8 @@ import numpy as np
 import math
 import scipy.signal as signal
 import scipy.ndimage as ndimage
-import pyfits
-
+#import pyfits
+from astropy.io import fits
 
 
 # We define the laplacian kernel to be used
@@ -121,12 +121,12 @@ class cosmicsimage:
         self.sigcliplow = sigclip * sigfrac
         self.satlevel = satlevel
 
-            self.verbose = verbose
+        self.verbose = verbose
 
-            self.pssl = pssl
+        self.pssl = pssl
 
-            self.backgroundlevel = None # only calculated and used if required.
-            self.satstars = None # a mask of the saturated stars, only calculated if required
+        self.backgroundlevel = None # only calculated and used if required.
+        self.satstars = None # a mask of the saturated stars, only calculated if required
 
     def __str__(self):
         """
@@ -189,7 +189,7 @@ class cosmicsimage:
         elif size == 5:
             dilmask = ndimage.morphology.binary_dilation(self.mask, structure=dilstruct, iterations=1, mask=None, output=None, border_value=0, origin=0, brute_force=False)
         else:
-            dismask = self.mask.copy()
+            dilmask = self.mask.copy()
 
         return dilmask
 
@@ -636,7 +636,7 @@ def fromfits(infilename, hdu = 0, verbose = True):
     Use hdu to specify which HDU you want (default = primary = 0)
     """
 
-    pixelarray, hdr = pyfits.getdata(infilename, hdu, header=True)
+    pixelarray, hdr = fits.getdata(infilename, hdu, header=True)
     pixelarray = np.asarray(pixelarray).transpose()
 
     pixelarrayshape = pixelarray.shape
@@ -664,9 +664,9 @@ def tofits(outfilename, pixelarray, hdr = None, verbose = True):
         os.remove(outfilename)
 
     if hdr == None: # then a minimal header will be created
-        hdu = pyfits.PrimaryHDU(pixelarray.transpose())
+        hdu = fits.PrimaryHDU(pixelarray.transpose())
     else: # this if else is probably not needed but anyway ...
-        hdu = pyfits.PrimaryHDU(pixelarray.transpose(), hdr)
+        hdu = fits.PrimaryHDU(pixelarray.transpose(), hdr)
 
     hdu.writeto(outfilename)
 
@@ -712,17 +712,17 @@ def rebin(a, newshape):
 
             >>> a=rand(6,4); b=rebin(a,(3,2))
         """
-        
-        shape = a.shape
-        lenShape = len(shape)
-        factor = np.asarray(shape)/np.asarray(newshape)
-        #print factor
-        evList = ['a.reshape('] + \
-                 ['newshape[%d],factor[%d],'%(i,i) for i in xrange(lenShape)] + \
-                 [')'] + ['.sum(%d)'%(i+1) for i in xrange(lenShape)] + \
-                 ['/factor[%d]'%i for i in xrange(lenShape)]
+    
+    shape = a.shape
+    lenShape = len(shape)
+    factor = np.asarray(shape)/np.asarray(newshape)
+    #print factor
+    evList = ['a.reshape('] + \
+             ['newshape[%d],factor[%d],'%(i,i) for i in xrange(lenShape)] + \
+             [')'] + ['.sum(%d)'%(i+1) for i in xrange(lenShape)] + \
+             ['/factor[%d]'%i for i in xrange(lenShape)]
 
-        return eval(''.join(evList))
+    return eval(''.join(evList))
 
 
 def rebin2x2(a):

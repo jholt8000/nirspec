@@ -10,24 +10,18 @@ Created on Fri Apr 05 16:08:28 2013
 import numpy as np
 
 import reduce_order
-
 reload(reduce_order)
 
 import nirspec_wavelength_utils
-
 reload(nirspec_wavelength_utils)
 import array_manipulate
-
 reload(array_manipulate)
 import fits
-
 reload(fits)
 
 import astro_math
-
 reload(astro_math)
 import nirspec_util
-
 reload(nirspec_util)
 
 import twod_lambda_fit
@@ -106,7 +100,7 @@ class Main():
 
         """ Initialize reduction"""
 
-        self.sci_name, self.sciheader, self.sciname = fits.Handle_fits.get_array_and_header(sci_name)
+        self.sci, self.sciheader, self.sciname = fits.Handle_fits.get_array_and_header(sci_name)
 
         if flat_name:
             self.flat, self.flatheader, self.flatname = fits.Handle_fits.get_array_and_header(flat_name)
@@ -152,8 +146,8 @@ class Main():
         self.logger.info(str('Starting Data Reduction for science file ' + self.sciname))
 
         # Get pre-canned starting self.order_nums & self.order_num sizes for each filter
-        self.data_dict = self.nh.get_data_dict
-
+        self.data_dict = self.nh.get_data_dict()
+        
         if self.data_dict['startord'] == 9999:
             self.logger.error('Filter name ' + str(self.header['filname']) + ' is not ready')
             return
