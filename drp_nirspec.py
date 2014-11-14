@@ -21,7 +21,7 @@ reload(astro_math)
 import pyfits as pf
 from datetime import datetime
 import optparse
-# test git
+# test
 
 def main(datadir, outdir, utdate='default'):
     """
