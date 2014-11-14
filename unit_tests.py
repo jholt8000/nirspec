@@ -39,7 +39,7 @@ def test_sanity_check(orig_pix_x, order_number_array, matched_sky_line):
     pass
 
 
-### nirspec_util.nirspecBookkeeping
+### nirspec_util.nirspecBookkeeping ###
 
 def test_close_logger(self):
        pass
