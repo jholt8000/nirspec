@@ -4,15 +4,16 @@ Created on Tue Jun 17 09:52:38 2014
 
 @author: jholt
 """
+import itertools
+
 import numpy as np
 from numpy import fft
-
 import scipy as sp
-import fits
-from mpl_toolkits.mplot3d import *
-import itertools
-import robust
 from scipy import optimize
+
+import fits
+import robust
+
 
 try:
     from scipy.signal import argrelextrema
@@ -24,8 +25,10 @@ def conv_ang_to_mu(dx):
     mu_dx = dx / 10000.
     return mu_dx
 
+
 def median_comb(cslist):
     """ stack up all arrays or fits files in cslist and take the median
+    :param cslist:
     Parameters:
     --------------
     cslist : data list or array containing string FITS file names
@@ -195,6 +198,13 @@ def fit_plane_ltsq(X, y, z):
 
 
 def plotplane(coeffs, X, Y, Z):
+    """
+
+    :param coeffs:
+    :param X:
+    :param Y:
+    :param Z:
+    """
     import matplotlib.pyplot as plt
     # from matplotlib import cm    
 
@@ -554,7 +564,7 @@ def order_wavelength_solution(matchesdx, matchesohx, dx, order):
     pl.show()
 
     # dx = nf3[0]*new_x**3 + nf3[1]*new_x**2 + nf3[2]*new_x + nf3[3]
-    #dx = nf2[0]*new_x**2 ++ nf2[1]*new_x + nf2[2] 
+    # dx = nf2[0]*new_x**2 ++ nf2[1]*new_x + nf2[2]
 
     #dx = nf1[0]*new_x + nf1[1]
 
@@ -849,7 +859,7 @@ def wavelength_solution_2d(all_matches):
             chi3 = np.sum((new_oh_o3 - oh_o) ** 2)
             chi4 = np.sum((new_oh_o4 - oh_o) ** 2)
             # chi10 = np.sum((new_oh_o10-oh_o)**2)
-            #chi20 = np.sum((new_oh_o20-oh_o)**2)
+            # chi20 = np.sum((new_oh_o20-oh_o)**2)
 
             print'1 residuals=', chi1
             print'1 residuals_noXterms=', chi1_noXterms
@@ -877,7 +887,7 @@ def apply_2d_wavelength_solution(p0, order, all_disp_sol):
 
     # real_disp, real_offset = nirspec_wavelength_utils.find_orig_lambda_solution(twod_fit)
     # print 'ads=', all_disp_sol
-    #print 'bad linear solution=', temp, disp,offset
+    # print 'bad linear solution=', temp, disp,offset
     #bad_twod_fit = disp * np.arange(1024) + offset
     # uncomment to show linear (bad fit)
     #dx = bad_twod_fit
