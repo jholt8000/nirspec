@@ -93,9 +93,16 @@ class LineId(object):
     def identify(self, ohx, ohy):
         """
 
-        :param ohx:
-        :param ohy:
-        :return:
+        :param ohx: list of oh line locations
+        :param ohy: list of oh line intensities
+        :return: self.matchesdx,
+            self. matchesohx
+            self.matchesohy
+            self.bigohx
+            self.bigohy
+            self.identify_status
+            self.matchesidx
+
         """
         self.identify_status = 0
         debug = False

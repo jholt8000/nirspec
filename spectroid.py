@@ -103,7 +103,7 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
         # return data_array[:,i]
         if cm_d == 0:
             # return from function before dividing by zero
-            return 0.0, 9999
+            return np.array(0.0), 9999
 
         cm.append(float(cm_n) / cm_d)
 

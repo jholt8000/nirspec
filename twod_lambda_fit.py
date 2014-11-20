@@ -41,7 +41,13 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
 ##    
 
     dataZ_orig = dataZ
-    
+    print 'dataX=',dataX
+    print 'dataY=',dataY
+    print 'dataZ=',dataZ
+
+    print 'shapes=',dataX.shape, dataY.shape, dataZ.shape
+
+
     dataXX, dataYY = scipy.meshgrid(dataX,dataY) 
     nx,ny=100,100
    # dataXX,dataYY = np.meshgrid(np.linspace(dataX.min()-5, dataX.max()+5, nx), np.linspace(dataY.min()-0.005, dataY.max()+0.005, ny))

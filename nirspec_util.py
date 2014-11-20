@@ -8,7 +8,7 @@ import logging, os
 import numpy as np
 
 import pylab as pl
-#import pyfits as pf
+from astropy.io import fits
 
 class NirspecBookkeeping(object):
     '''
@@ -29,7 +29,7 @@ class NirspecBookkeeping(object):
         self.verbose = verbose
 
     @staticmethod
-    def make_nirspec_final_FITS_and_plots(allreduceobj, order_num, sciorder, lineobj, traceobj, flatobj, sciobj):
+    def make_nirspec_final_FITS_and_plots(allreduceobj, sciorder, lineobj, traceobj, flatobj, sciobj, dx_2dfit):
         '''
         Creates final reduction outputs
         
@@ -37,8 +37,6 @@ class NirspecBookkeeping(object):
         --------------
         allreduceobj: object
             FITS file name of science
-        ordernum: int
-            todo
         sciorder: object
             todo
         lineobj: object
@@ -51,10 +49,10 @@ class NirspecBookkeeping(object):
             todo
 
         '''
-        
+
         pl.figure(1)
         pl.clf()
-        pl.title("Order="+str(order_num))
+        pl.title("Order="+str(allreduceobj.order_num))
         pl.plot(sciorder.dx, sciorder.skys,'b',label='original theory sky')
         if len(lineobj.bigohx) > 0:                    
           for i in np.arange(0,len(lineobj.matchesohx)):
@@ -66,15 +64,15 @@ class NirspecBookkeeping(object):
         pl.legend(loc=4)
         pl.xlabel("$\mu$")
         if allreduceobj.write_plots:
-          pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'sky_order_'+str(order_num)+'.png',bbox_inches=0)
+          pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'sky_order_'+str(allreduceobj.order_num)+'.png',bbox_inches=0)
         #if write_fits:
-        #  pf.writeto(outpath+sciname+'extracted_order_num'+str(order_num)+'.fits',np.array((sciorder.dx,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
+        #  pf.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(allreduceobj.order_num)+'.fits',np.array((sciorder.dx,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
 
         
         pl.figure(2)
         pl.clf()
-        pl.title("Order="+str(order_num))
-        pl.plot(sciorder.dx_2dfit,sciorder.skys,'b',label='sky after 2dfit')
+        pl.title("Order="+str(allreduceobj.order_num))
+        pl.plot(dx_2dfit,sciorder.skys,'b',label='sky after 2dfit')
         if len(lineobj.bigohx) > 0:                    
           for i in np.arange(0,len(lineobj.matchesohx)):
             pl.text(lineobj.matchesohx[i],sciorder.skys.max()+100,str(lineobj.matchesohx[i]),rotation='vertical',fontsize='x-small')
@@ -85,54 +83,58 @@ class NirspecBookkeeping(object):
         pl.legend(loc=4)
         pl.xlabel("$\mu$")
         if allreduceobj.write_plots:
-          pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'sky_order_'+str(order_num)+'.png',bbox_inches=0)
+          pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'sky_order_'+str(allreduceobj.order_num)+'.png',bbox_inches=0)
         #if write_fits:
-        #  pf.writeto(outpath+sciname+'extracted_order_num'+str(order_num)+'.fits',np.array((sciorder.dx_2dfit,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
+        #  pf.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(allreduceobj.order_num)+'.fits',np.array((sciorder.dx_2dfit,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
     
         pl.figure(3)
         pl.clf()
-        pl.title("Order="+str(order_num))
+        pl.title("Order="+str(allreduceobj.order_num))
         pl.plot(sciorder.crosscut,'g')
         #pl.plot(fit,'k.-',label='gaussian fit')
         pl.plot(sciorder.peak,sciorder.crosscut[sciorder.peak],'k*',markersize=5,label='peak')
         pl.ylim((sciorder.crosscut[1].min()-20000,1.1*sciorder.crosscut[sciorder.peak]))
-        pl.plot((sciorder.peak+sciorder.ext_range[0],sciorder.peak+sciorder.ext_range[-1]),(sciorder.crosscut[sciorder.peak],sciorder.crosscut[sciorder.peak]),'r',label='extraction window')
-        if sciorder.sky_range_top: pl.plot((sciorder.peak+sciorder.sky_range_top[0],sciorder.peak+sciorder.sky_range_top[-1]),(sciorder.crosscut[sciorder.peak],sciorder.crosscut[sciorder.peak]),'b',label='sky')
+        pl.plot((sciorder.peak+sciorder.ext_range[0],sciorder.peak+sciorder.ext_range[-1]),
+                (sciorder.crosscut[sciorder.peak],sciorder.crosscut[sciorder.peak]),'r',label='extraction window')
+        if sciorder.sky_range_top: pl.plot((sciorder.peak+sciorder.sky_range_top[0],
+                                            sciorder.peak+sciorder.sky_range_top[-1]),(sciorder.crosscut[sciorder.peak],
+                                                                                       sciorder.crosscut[sciorder.peak]),
+                                           "b",label='sky')
         if sciorder.sky_range_bot: pl.plot((sciorder.peak+sciorder.sky_range_bot[0],sciorder.peak+sciorder.sky_range_bot[-1]),(sciorder.crosscut[sciorder.peak],sciorder.crosscut[sciorder.peak]),'b')
         pl.legend(loc=4,prop={'size':8})
         if allreduceobj.write_plots:
-            pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(order_num)+'.png',bbox_inches=0)
+            pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(allreduceobj.order_num)+'.png',bbox_inches=0)
         if allreduceobj.write_fits:
-            #pf.writeto(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(order_num)+'.fits',np.array([sciorder.crosscut]),allreduceobj.sciheader,output_verify='warn',clobber=True)                           
-            c1=pf.Column(name='cross cut', format='E', array=sciorder.crosscut, bscale=4.4, ascii=True)
-            hdu = pf.TableHDU.from_columns([c1])
-            hdu.writefits(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(order_num)+'.fits')
+            #pf.writeto(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(allreduceobj.order_num)+'.fits',np.array([sciorder.crosscut]),allreduceobj.sciheader,output_verify='warn',clobber=True)                           
+            c1=fits.Column(name='cross cut', format='E', array=sciorder.crosscut, bscale=4.4, ascii=True)
+            hdu = fits.TableHDU.from_columns([c1])
+            hdu.writefits(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(allreduceobj.order_num)+'.fits')
        
         if sciorder.cont.any():
             pl.figure(4,figsize=(15,8))
             pl.clf()
-            pl.title("Order="+str(order_num))
+            pl.title("Order="+str(allreduceobj.order_num))
             ax1=pl.subplot(211)
-            pl.title("Order="+str(order_num))
-            pl.plot(sciorder.dx_2dfit,sciorder.cont,'r',label='avg of central rows')
-            pl.xlim([sciorder.dx_2dfit[0],sciorder.dx_2dfit[-1]])
+            pl.title("Order="+str(allreduceobj.order_num))
+            pl.plot(dx_2dfit,sciorder.cont,'r',label='avg of central rows')
+            pl.xlim([dx_2dfit[0],dx_2dfit[-1]])
             pl.subplot(212,sharex=ax1)
             
             pl.xlabel("$\mu$")
         else:
             pl.figure(4,figsize=(15,1.5))
-            pl.title("Order="+str(order_num))
+            pl.title("Order="+str(allreduceobj.order_num))
             pl.xlabel("$\mu$")
-        pl.imshow(sciorder.rectified,origin='lower',extent=[sciorder.dx_2dfit[0],sciorder.dx_2dfit[-1],0,sciorder.rectified.shape[0]],aspect='auto')
+        pl.imshow(sciorder.rectified,origin='lower',extent=[dx_2dfit[0],dx_2dfit[-1],0,sciorder.rectified.shape[0]],aspect='auto')
         pl.xlabel("$\mu$")
         if allreduceobj.write_plots:
-            pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'rectified_order'+str(order_num)+'.png',bbox_inches=0)
+            pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'rectified_order'+str(allreduceobj.order_num)+'.png',bbox_inches=0)
         if allreduceobj.write_fits:
-            pf.writeto(allreduceobj.outpath+allreduceobj.sciname+'rectified_order'+str(order_num)+'.fits',sciorder.rectified,allreduceobj.sciheader, output_verify='warn',clobber=True)
+            fits.writeto(allreduceobj.outpath+allreduceobj.sciname+'rectified_order'+str(allreduceobj.order_num)+'.fits',sciorder.rectified,allreduceobj.sciheader, output_verify='warn',clobber=True)
                 
         if True:
-            if not traceobj.traced_bot: traceobj.cb=0
-            if not traceobj.traced_top: traceobj.ct=0
+            if not traceobj.traced_bot: traceobj.bot_spectroid=0
+            if not traceobj.traced_top: traceobj.top_spectroid=0
         
             pl.figure(18)
             pl.clf()
@@ -141,11 +143,11 @@ class NirspecBookkeeping(object):
             pl.plot(10,traceobj.lhs_top,'g*')
             pl.plot(10,traceobj.lhs_top_theory,'r+')
             pl.plot(10,traceobj.lhs_bot_theory,'r+')    
-            pl.plot(traceobj.cm,'k',lw=2)            
-            pl.plot(traceobj.ct,'g',lw=2)
-            pl.plot(traceobj.cb,'g',lw=2)
+            pl.plot(traceobj.avg_spectroid,'k',lw=2)
+            pl.plot(traceobj.top_spectroid,'g',lw=2)
+            pl.plot(traceobj.bot_spectroid,'g',lw=2)
             if allreduceobj.write_plots:
-                pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'allflat'+str(order_num)+'.png',bbox_inches=0)       
+                pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'allflat'+str(allreduceobj.order_num)+'.png',bbox_inches=0)       
                             
             pl.figure(19)
             pl.clf()
@@ -155,10 +157,10 @@ class NirspecBookkeeping(object):
             pl.plot(10,traceobj.lhs_top_theory,'r+')
             pl.plot(10,traceobj.lhs_bot_theory,'r+')    
             #pl.plot(cm,'k')            
-            pl.plot(traceobj.ct,'g')
-            pl.plot(traceobj.cb,'g')
+            pl.plot(traceobj.top_spectroid,'g')
+            pl.plot(traceobj.bot_spectroid,'g')
             if allreduceobj.write_plots:
-                pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'allsci'+str(order_num)+'.png',bbox_inches=0)       
+                pl.savefig(allreduceobj.outpath+allreduceobj.sciname+'allsci'+str(allreduceobj.order_num)+'.png',bbox_inches=0)       
              
             if allreduceobj.show_plot:               
                 pl.show() 
@@ -259,8 +261,7 @@ class NirspecHeader(object):
             data_dict['order_threshold'] = 40
             data_dict['order_threshold_faint_flat'] = 40
         
-        print 'data_dict1=',data_dict
-        return data_dict        
+        return data_dict
 
     def get_theory_order_pos(self, order, A_to_mu=True):
         '''
@@ -385,16 +386,16 @@ class NirspecHeader(object):
         peaks=np.where(magcrosscutatextrema > (threshold))
              
         actualpeaks=extrema[peaks[0]]
-        print 'magcrosscut[extrema]=',magcrosscut[extrema]
-        print 'peaks = ',peaks
-        print 'actual peaks=',actualpeaks
-        pl.figure(13)
-        pl.clf()
+        #print 'magcrosscut[extrema]=',magcrosscut[extrema]
+        #print 'peaks = ',peaks
+        #print 'actual peaks=',actualpeaks
+        #pl.figure(13)
+        #pl.clf()
         
-        pl.plot(magcrosscut)
-        pl.plot(extrema,magcrosscutatextrema,'bx')
-        pl.plot(actualpeaks,magcrosscut[actualpeaks],'r*')
-        pl.show()
+        #pl.plot(magcrosscut)
+        #pl.plot(extrema,magcrosscutatextrema,'bx')
+        #pl.plot(actualpeaks,magcrosscut[actualpeaks],'r*')
+        #pl.show()
         
         if actualpeaks.any(): 
             actual=min((abs(theory - i),i) for i in actualpeaks)[1]        

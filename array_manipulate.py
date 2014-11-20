@@ -210,16 +210,30 @@ class SciArray(BaseArray):
         
         #transpose the array because spectroid can only read horizontal peaks for now
         npsTs=self.data.transpose()
+        #import pylab as pl
+
+        #pl.figure(3)
+        #pl.clf()
+        #pl.imshow(npsTs, origin='lower')
+
         # The order cutout has padding on each side. In order to find the sky lines we should 
         # only look at the central section of the cut out array
         npsTs = npsTs[:,padding+5:npsTs.shape[1]-5-padding]
-                
+
+        #pl.figure(4)
+        #pl.clf()
+        #pl.imshow(npsTs, origin='lower')
+
         cc = np.sum(npsTs[:,0:5],axis=1)
-        
+        #pl.figure(5)
+        #pl.clf()
+        #pl.plot(cc)
+        #pl.show()
+
         locpeaks=argrelextrema(cc,np.greater)
         locmaxes=np.where(cc[locpeaks[0]] > sky_sigma*cc.mean())
         maxes = np.array(locpeaks[0][locmaxes[0]])
-     
+
         deletelist=[]
         # remove 'close' real sky line values
         for i in range(1,len(maxes)):
@@ -235,11 +249,14 @@ class SciArray(BaseArray):
         skydict={}
         centroid_sky_sum=np.array([])   
         fitnumber=0
-        
+
+        #pl.figure(7)
+        #pl.clf()
         for maxskyloc in maxes:
           if maxskyloc > 10 and maxskyloc < 1010:
             #pl.plot(1,maxskyloc,'r*')
-            centroid_sky,badfit=spectroid(npsTs,dloc=maxskyloc,spw=3,bkw=0,trace_mean=True,trace_last=False,trace_delta=0.8)
+            centroid_sky, badfit=spectroid(npsTs, dloc=maxskyloc, spw=3, bkw=0, trace_mean=True, trace_last=False,
+                                           trace_delta=0.8)
     
             if badfit==9999: continue # skip this skyline
  
@@ -258,12 +275,16 @@ class SciArray(BaseArray):
         
         if centroid_sky_sum.any():    
             sky_line=centroid_sky_sum / fitnumber
+            #pl.plot(sky_line,'g*')
             self.sky_line_success = True
         else:
             sky_line = Nirspec_fudge_constants.badval
             self.sky_line_success = False
-        
         self.sky_line = sky_line
+        #pl.figure(13)
+        #pl.clf()
+        #pl.plot(self.sky_line,'g*')
+
 
     def setup_extraction_ranges(self, ext_height, sky_distance, sky_height, 
                                 peak, order, logger):     

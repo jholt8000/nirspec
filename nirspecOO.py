@@ -10,18 +10,24 @@ Created on Fri Apr 05 16:08:28 2013
 import numpy as np
 
 import reduce_order
+
 reload(reduce_order)
 
 import nirspec_wavelength_utils
+
 reload(nirspec_wavelength_utils)
 import array_manipulate
+
 reload(array_manipulate)
 import fits
+
 reload(fits)
 
 import astro_math
+
 reload(astro_math)
 import nirspec_util
+
 reload(nirspec_util)
 
 import twod_lambda_fit
@@ -91,7 +97,7 @@ class Main():
         
     """
 
-    def __init__(self, sci_name, flat_name, dark_name='', do_extract=False, do_darksub=True,
+    def __init__(self, sci_name, flat_name, dark_name='', do_extract=True, do_darksub=True,
                  show_plot=True, cosmic_clean=False,
                  max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0,
                  ext_height=3, sky_distance=5, write_fits=False,
@@ -133,13 +139,14 @@ class Main():
 
         """ takes input raw science and raw flat and produces a rectified, 
         extracted, wavelength calibrated spectrum for quick-look purposes
+        :type self: object
         """
 
         # instantiate nirspec specific bookkeeping and header utils
         self.nh = nirspec_util.NirspecHeader(self.sciheader)
 
         nb = nirspec_util.NirspecBookkeeping(self.sciname,
-                                              outpath=self.outpath)
+                                             outpath=self.outpath)
 
         self.logger = nb.setup_logger()
 
@@ -147,7 +154,7 @@ class Main():
 
         # Get pre-canned starting self.order_nums & self.order_num sizes for each filter
         self.data_dict = self.nh.get_data_dict()
-        
+
         if self.data_dict['startord'] == 9999:
             self.logger.error('Filter name ' + str(self.header['filname']) + ' is not ready')
             return
@@ -194,6 +201,7 @@ class Main():
         lhs_top = 0
         all_bad_sol = []
         all_order_objects = []
+        all_order_matches = []
         orig_pix_x = []
         order_number_array = []
         matched_sky_line = []
@@ -202,58 +210,71 @@ class Main():
         # reduce => find edges, trace edges, cut out order, rectify order
         # flatfield correct, extract 1d 
         while self.order_num > 0 and lhs_top < 1034:
-            all_nirspec_data = reduce_order.reduce_order(self, sciobj, flatobj)
-            if len(all_nirspec_data[0]) > 0:
-                order_num, sciorder, lineobj, flatobj, traceobj, found_wavelength = all_nirspec_data[0]
-                lhs_top = traceobj.lhs_top
-                all_order_objects.append(all_nirspec_data[0])
 
-                if found_wavelength:
-                    # store wavlength solution
-                    orig_pix_x.append((np.array(lineobj.matchesidx)))
-                    order_num.append((np.zeros(len(lineobj.matchesidx)) + order_num))
-                    matched_sky_line.append((np.array(lineobj.matchesohx)))
+            reduced_order_object = reduce_order.Reduce_order(self, sciobj, flatobj)
+            reduced_order_object.reduce_order()
+
+            lhs_top = reduced_order_object.traceobj.lhs_top
+
+            if reduced_order_object.lineobj is not None and self.do_extract:
+
+                all_order_objects.append(reduced_order_object)
+
+                order_number_array.append(np.zeros(len(reduced_order_object.lineobj.matchesdx)) +self.order_num)
+
+                if reduced_order_object.found_wavelength:
+                    # store wavelength solution
+                    orig_pix_x.append((np.array(reduced_order_object.lineobj.matchesidx)))
+                    all_order_matches.append(
+                        (np.zeros(len(reduced_order_object.lineobj.matchesidx)) + self.order_num))
+                    matched_sky_line.append((np.array(reduced_order_object.lineobj.matchesohx)))
 
                 else:
-                    all_bad_sol.append((lineobj.matchesdx, lineobj.matchesohx, lineobj.matchesidx, order_num))
+                    all_bad_sol.append((reduced_order_object.lineobj.matchesdx,
+                                        reduced_order_object.lineobj.matchesohx,
+                                        reduced_order_object.lineobj.matchesidx, self.order_num))
 
-            if all_nirspec_data[1] > 1034:
-                # break out early, don't go trhough all orders to order_num=1
+            if lhs_top > 1034:
+                # break out early, don't go through all orders to order_num=1
                 self.order_num -= 100
             else:
                 self.order_num -= 1
 
-        # need to add a sanity checker to first fit some function to each order's OH and IDs
-        opx, ona, msl = sanity_check(orig_pix_x, order_number_array, matched_sky_line)
-
+                # need to add a sanity checker to first fit some function to each order's OH and IDs
+                # opx, ona, msl = sanity_check(orig_pix_x, order_number_array, matched_sky_line)
 
         if len(orig_pix_x) > 0:
             # reduce dimensions of each array into single 1d array, "flatten" array
             orig_pix_x_stack = np.hstack(orig_pix_x)
+            #try:
             order_number_array_stack = 1. / np.hstack(order_number_array)
+            print 'onas=',order_number_array_stack
             matched_sky_line_stack = np.hstack(matched_sky_line)
+            print 'msls=',matched_sky_line_stack
+            print "orig_pix_x_stack=",orig_pix_x_stack
+            p1 = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
+                                         np.array(order_number_array_stack),
+                                         np.array(matched_sky_line_stack), logger=self.logger,
+                                         lower_len_points=10., sigma_max=0.5)
 
-        p1 = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
-                                     np.array(order_number_array_stack),
-                                     np.array(matched_sky_line_stack), logger=self.logger,
-                                     lower_len_points=10., sigma_max=0.5)
-
-        for (order_num, sciorder, lineobj, flatobj, traceobj, found_wavelength) in all_order_objects:
             # ## all this belongs elsewhere ###
             newdx = np.arange(1024)
-            newy = 1. / order_num
+            newy = 1. / self.order_num
             newoh = np.ravel(
                 p1[0] + p1[1] * newdx + p1[2] * newdx ** 2 + p1[3] * newy + p1[4] * newdx * newy + p1[5] * (
                     newdx ** 2) * newy)
 
-            sciorder.dx_2dfit = astro_math.conv_ang_to_mu(newoh)
-            sciorder.dx = astro_math.conv_ang_to_mu(sciorder.dx)
-            lineobj.matchesohx = astro_math.conv_ang_to_mu(lineobj.matchesohx)
-            lineobj.bigohx = astro_math.conv_ang_to_mu(lineobj.bigohx)
+            #setattr(reduced_order_object.sciorder, "dx_2dfit", astro_math.conv_ang_to_mu(newoh))
+            #reduced_order_object.sciorder.dx = astro_math.conv_ang_to_mu(reduced_order_object.sciorder.dx)
+            #reduced_order_object.lineobj.matchesohx = astro_math.conv_ang_to_mu(reduced_order_object.lineobj.matchesohx)
+            #reduced_order_object.lineobj.bigohx = astro_math.conv_ang_to_mu(reduced_order_object.lineobj.bigohx)
 
-            #### fit a line to final x-axis
+                # ### fit a line to final x-axis
+            #except:
+            print '2d lambda not working'
 
-            nirspec_util.make_nirspec_final_fits_and_plots(self, order_num, sciorder, lineobj, traceobj, flatobj, sciobj)
+        for order_object in all_order_objects:
+            nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj, order_object.traceobj, order_object.flatobj, order_object.sciobj, newoh)
 
         self.logger.info('Finished quicklook reduction for science file ' + self.sciname)
 

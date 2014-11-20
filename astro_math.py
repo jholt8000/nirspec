@@ -11,7 +11,7 @@ from numpy import fft
 import scipy as sp
 from scipy import optimize
 
-import fits
+from astropy.io import fits
 import robust
 
 
@@ -388,16 +388,16 @@ def fit_curve(X, Y, Z):
     # printX,Y,Z,disp_set_fit
     import pylab as pl
 
-    pl.figure(1)
-    pl.clf()
-    pl.plot(X, Z, 'r*')
-    pl.plot(X, disp_set_fit, 'r')
+    #pl.figure(1)
+    #pl.clf()
+    #pl.plot(X, Z, 'r*')
+    #pl.plot(X, disp_set_fit, 'r')
 
-    pl.figure(2)
-    pl.clf()
-    pl.plot(Y, Z, 'r*')
-    pl.plot(Y, disp_set_fit, 'r')
-    pl.show()
+    #pl.figure(2)
+    #pl.clf()
+    #pl.plot(Y, Z, 'r*')
+    #pl.plot(Y, disp_set_fit, 'r')
+    #pl.show()
     return popt, X, Y, Z, disp_set_fit
 
 

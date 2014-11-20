@@ -32,5 +32,3 @@ class Handle_fits():
 
         return data, hdr, filename
     
-
- f
