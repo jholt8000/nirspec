@@ -98,7 +98,7 @@ class Main():
     """
 
     def __init__(self, sci_name, flat_name, dark_name='', do_extract=True, do_darksub=True,
-                 show_plot=True, cosmic_clean=False,
+                 show_plot=True, cosmic_clean=True,
                  max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0,
                  ext_height=3, sky_distance=5, write_fits=False,
                  sky_height=5, rawpath='', outpath='', write_plots=False,
@@ -257,9 +257,14 @@ class Main():
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.5)
 
+
+            print '2d lambda not working'
+
+        for order_object in all_order_objects:
+
             # ## all this belongs elsewhere ###
             newdx = np.arange(1024)
-            newy = 1. / self.order_num
+            newy = 1. / order_object.sciorder.order_num
             newoh = np.ravel(
                 p1[0] + p1[1] * newdx + p1[2] * newdx ** 2 + p1[3] * newy + p1[4] * newdx * newy + p1[5] * (
                     newdx ** 2) * newy)
@@ -270,10 +275,6 @@ class Main():
             #reduced_order_object.lineobj.bigohx = astro_math.conv_ang_to_mu(reduced_order_object.lineobj.bigohx)
 
                 # ### fit a line to final x-axis
-            #except:
-            print '2d lambda not working'
-
-        for order_object in all_order_objects:
             nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj, order_object.traceobj, order_object.flatobj, order_object.sciobj, newoh)
 
         self.logger.info('Finished quicklook reduction for science file ' + self.sciname)

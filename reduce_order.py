@@ -112,6 +112,9 @@ class Reduce_order(object):
 
             #make instances of array manip class using just the order slice
             self.sciorder = array_manipulate.SciArray(self.sciobj.order_slice)
+
+            setattr(self.sciorder, 'order_num', self.reduction.order_num)
+
             flatorder = array_manipulate.FlatArray(self.flatobj.order_slice)
 
             # copy new order-specific dx array to be attribute of self.sciorder
@@ -146,7 +149,12 @@ class Reduce_order(object):
 
             # rectify the order slice, sets self.sciorder.rectified
             self.reduction.logger.info('shifting order using order edges')
-            self.sciorder.interp_shift(self.traceobj.avg_spectroid, orientation='vertical', pivot='middle')
+            # fit a 3d poly to center-of-mass fit to smooth interpolation shift and get rid of any bumps due to uneven
+            # illumination on flat order edges
+            fit_spectroid, foo = astro_math.fit_poly(self.traceobj.avg_spectroid,
+                                                    xes=np.arange(self.sciorder.data.shape[1]),
+                                                    deg=3)
+            self.sciorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
 
             #remove the padding and start at lhs_bot to show plots in correct place
             self.traceobj.shift_order_back()
@@ -198,9 +206,9 @@ class Reduce_order(object):
             self.sciorder.interp_shift(sky_line_fit, orientation='horizonal',
                                   pivot='peak')
 
-            import pylab as pl
-            pl.clf()
-            pl.imshow(self.sciorder.rectified)
+            #import pylab as pl
+            #pl.clf()
+            #pl.imshow(self.sciorder.rectified)
             self.sciorder.data = self.sciorder.rectified
 
         else:
@@ -215,12 +223,12 @@ class Reduce_order(object):
             self.sciorder.sum_extract(self.sciorder.ext_range, self.sciorder.sky_range_bot,
                                  self.sciorder.sky_range_top)
 
-            import pylab as pl
-            pl.figure(12)
-            pl.clf()
-            pl.plot(self.sciorder.cont)
-            pl.plot(self.sciorder.skys)
-            pl.show()
+            #import pylab as pl
+            #pl.figure(12)
+            #pl.clf()
+            #pl.plot(self.sciorder.cont)
+            #pl.plot(self.sciorder.skys)
+            #pl.show()
             if self.sciorder.extract_status == 0:
                 self.reduction.logger.error('could not extract order ' + str(self.reduction.order_num))
 

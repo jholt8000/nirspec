@@ -11,15 +11,16 @@ Created on Thu Mar 28 10:30:41 2013
 @author: jholt
 
 2014/03/02 improve background logic
-2014/07/25 use scipy center-of-mass routine instead of handmade algorithm
+
 """
 import numpy as np
 from scipy import ndimage
 
+
 def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
               trace_last=False, trace_delta=1.9):
     """ Find centroids for each column in data_array -- only works horizontally
-    
+
      data_array: 2d numpy data array, usually read in from pyfits
      spw=10: is distance away, up and down, from center to search for centroid
      bkw=30: is background distance from center to subtract before finding centroid
@@ -40,27 +41,23 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
     centroiding went outside of centroid[i-1]*trace_delta
     """
 
+
+    print 'type of data array=',type(data_array)
     # initialize "center of mass" array to be populated with centroids
     # cm=np.zeros(data_array.shape[1])
-    cm = np.zeros(data_array.shape[1])
-
-    cm2 = []
-    #R -= R.sum(0) / len(R)
-
+    cm = []
     # badfit is a measure of how many times routine had to correct for bad centroid
     badfit = 0
 
     # first centroid will be starting location input parameter
     # cm[0]=dloc
-    cm[0] = dloc
-    cm2.append(dloc)
+    cm.append(dloc)
     xmin = 1
     xmax = data_array.shape[1]
 
     for i in range(xmin, xmax):
         # i is each "x" or column
         # lowest height (or row) to search for centroid
-
         ymin = int(cm[i - 1] - spw)
         # maximum height (or row) to search for centroid
         ymax = int(cm[i - 1] + spw)
@@ -69,15 +66,11 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
         if abs(ymax) > data_array.shape[0]:
             ymax = int(data_array.shape[0])
 
-        # if the min is smaller than the
-        #  bottom, use the bottom of array
-        if ymin < 1: #dont let it trace the bottom of the detector
-            ymin = 1
-        if ymax <= 0:
-            ymax = int(cm[i] + spw)+1
+        # if the min is smaller than the bottom, use the bottom of array
+        if ymin < 0:
+            ymin = 0
 
         if bkw > 0:  # Subtract background
-            # bkmin is the center found for the previous column minus the bkw (background width)
             # location of lower background sample
             bkmin = cm[i - 1] - bkw
             # location of top background sample
@@ -95,7 +88,7 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
             bk_mean = (bkmax_val + bkmin_val) / 2.
 
         else:
-            bk_mean = 0.0  # do not subtract background value
+            bk_mean = 0.0  # do not subract background value
 
         # centroid eqn for column 1: 
         # (Sum(data_array[j,1]) * j / Sum(data_array[j,1]))
@@ -103,29 +96,43 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
         # for each column (i)  find the sum (centroid_value_j * y_j) 
         # where centroid_value_j is the value at y=j,x=i         
 
-        cm[i] = ndimage.measurements.center_of_mass(data_array[int(ymin):int(ymax)+1, i] - bk_mean)[0] + ymin
+        cm_n = sum([(data_array[j, i] - bk_mean) * j for j in range(int(ymin), int(ymax) + 1)])
+        cm_d = sum([(data_array[j, i] - bk_mean) for j in range(int(ymin), int(ymax) + 1)])
+
+        # test = data_array[int(ymin):int(ymax),i]
+        # cm[i]= ndimage.measurements.center_of_mass(test-bk_mean)[0]+ymin
+        # if i < 20: print cm[i], ymin, ymax
 
         # return data_array[:,i]
-        if cm[i] is np.inf or cm[i] is -np.inf : # This happens when we went off array
+        if cm_d == 0:
+            # return from function before dividing by zero
             return np.array(0.0), 9999
 
-        # centroid jumped more than trace_delta
-        if np.abs(cm[i] - cm[i - 1]) > trace_delta :
-            badfit += 1
-            if trace_mean:
-                if i > 4:
-                    # jump is past beginning, use past three centroids
+        cm.append(float(cm_n) / cm_d)
 
-                    cm[i] = cm[i-3:i-1].mean()
-                elif i > 1:
+        # centroid jumped more than trace_delta
+        if np.abs(cm[i] - cm[i - 1]) > trace_delta:
+
+            badfit += 1
+
+            if trace_mean:
+
+                if len(cm) > 4:
+                    # jump is past beginning, use past three centroids
+                    kmax = 3
+                elif len(cm) > 1:
                     # average as many cms as we have gone through
-                    cm[i] = cm[i-2:i-1].mean()
+                    kmax = len(cm)
                 else:
                     # use the first one found
-                    cm[i] = cm[i-1]
+                    kmax = 2
+
+                cm[i] = (sum([cm[i - k] for k in range(1, kmax)])) / (float(kmax) - 1)
 
             elif trace_last:
                 cm[i] = cm[i - 1]
+
+    cm = np.array(cm)
 
     return cm, badfit
 
