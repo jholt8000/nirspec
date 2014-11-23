@@ -6,7 +6,7 @@ centroid locations have too high of a slope. It returns the centroid array and
 the counter of how many self corrections occurred. The second value is a 
 reasonable measure of the goodness of the calculation for most smooth curves. 
 
-Created on Thu Mar 28 10:30:41 2013
+Created on Thu Mar 28 10:30:41 2013 
 
 @author: jholt
 
