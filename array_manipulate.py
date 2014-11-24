@@ -255,8 +255,9 @@ class SciArray(BaseArray):
         for maxskyloc in maxes:
           if maxskyloc > 10 and maxskyloc < 1010:
             #pl.plot(1,maxskyloc,'r*')
-            centroid_sky, badfit=spectroid(npsTs, dloc=maxskyloc, spw=3, bkw=0, trace_mean=True, trace_last=False,
-                                           trace_delta=0.8)
+
+            centroid_sky, badfit= spectroid(npsTs, traceWidth=3, backgroundWidth=0, startingLocation=maxskyloc,
+                                            traceMean=True, traceLast=False, traceDelta=0.8)
     
             if badfit==9999: continue # skip this skyline
  
@@ -569,9 +570,8 @@ class FlatArray(BaseArray):
         # background subtraction            
         # ct is the centroid fit to the top of the order
         # bft is bad fit top = number of times spectroid had to self-correct
-        ct, bft = spectroid(tops, dloc = lhs_top, spw = data_dict['spw'], 
-                            bkw = 0, trace_mean = True, trace_last = False, 
-                            trace_delta = data_dict['trace_delta']) 
+        ct, bft = spectroid(tops, traceWidth=data_dict['spw'], backgroundWidth=0, startingLocation=lhs_top,
+                            traceMean=True, traceLast=False, traceDelta=data_dict['trace_delta'])
                             
         logger.info('had to self correct on top = '+str(bft)+' times ')
         if bft > 300.: traced_top = False
@@ -581,9 +581,8 @@ class FlatArray(BaseArray):
             highest_top = max(ct[0], ct[1010]) 
         except: traced_top = False    
             
-        cb, bfb = spectroid(bots, dloc = lhs_bot, spw = data_dict['spw'], 
-                                    bkw = 0, trace_mean = True, trace_last = False, 
-                                    trace_delta = data_dict['trace_delta'])
+        cb, bfb = spectroid(bots, traceWidth=data_dict['spw'], backgroundWidth=0, startingLocation=lhs_bot, traceMean=True, traceLast=False,
+                            traceDelta=data_dict['trace_delta'])
                                     
         logger.info('had to self correct on bottom = '+str(bfb)+' times ')
         if bfb > 300.: traced_bot = False

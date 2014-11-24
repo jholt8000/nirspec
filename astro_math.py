@@ -12,7 +12,7 @@ import scipy as sp
 from scipy import optimize
 
 from astropy.io import fits
-import robust
+#import robust
 
 
 try:

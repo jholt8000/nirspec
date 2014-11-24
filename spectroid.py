@@ -6,7 +6,7 @@ centroid locations have too high of a slope. It returns the centroid array and
 the counter of how many self corrections occurred. The second value is a 
 reasonable measure of the goodness of the calculation for most smooth curves. 
 
-Created on Thu Mar 28 10:30:41 2013 
+Created on Thu Mar 28 10:30:41 2013
 
 @author: jholt
 
@@ -17,13 +17,13 @@ import numpy as np
 from scipy import ndimage
 
 
-def spectroid(data_array, spw=10, bkw=30, startingLocation=926, traceMean=True,
+def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
               traceLast=False, traceDelta=1.9):
-    """ Find centroids for each column in data_array -- only works horizontally
+    """ Find centroids for each column in dataArray -- only works horizontally
     
-     :parameter data_array: 2d numpy data array, usually read in from pyfits
-     :parameter spw=10: is distance away, up and down, from center to search for centroid
-     :parameter bkw=30: is background distance from center to subtract before finding centroid
+     :parameter dataArray: 2d numpy data array, usually read in from pyfits
+     :parameter traceWidth=10: is distance away, up and down, from center to search for centroid
+     :parameter backgroundWidth=30: is background distance from center to subtract before finding centroid
      :parameter  startingLocation=y: starting location for centroid at x=0
      :parameter traceMean=True: if traceMean is true and centroid found is
            >traceDelta*abs(previous centroid found) then use mean of previous 
@@ -42,8 +42,8 @@ def spectroid(data_array, spw=10, bkw=30, startingLocation=926, traceMean=True,
     """
 
     # initialize "center of mass" array to be populated with centroids
-    # cm=np.zeros(data_array.shape[1])
-    cm = np.zeros(data_array.shape[1])
+    # cm=np.zeros(dataArray.shape[1])
+    cm = np.zeros(dataArray.shape[1])
 
     cm2 = []
     # R -= R.sum(0) / len(R)
@@ -56,57 +56,57 @@ def spectroid(data_array, spw=10, bkw=30, startingLocation=926, traceMean=True,
     cm[0] = startingLocation
     cm2.append(startingLocation)
     xmin = 1
-    xmax = data_array.shape[1]
+    xmax = dataArray.shape[1]
 
     for i in range(xmin, xmax):
         # i is each "x" or column
         # lowest height (or row) to search for centroid
 
-        ymin = int(cm[i - 1] - spw)
+        ymin = int(cm[i - 1] - traceWidth)
         # maximum height (or row) to search for centroid
-        ymax = int(cm[i - 1] + spw)
+        ymax = int(cm[i - 1] + traceWidth)
 
         # if the max is bigger than the top, use the top of array
-        if abs(ymax) > data_array.shape[0]:
-            ymax = int(data_array.shape[0])
+        if abs(ymax) > dataArray.shape[0]:
+            ymax = int(dataArray.shape[0])
 
         # if the min is smaller than the
         # bottom, use the bottom of array
         if ymin < 1:  # don't let it trace the bottom of the detector
             ymin = 1
         if ymax <= 0:
-            ymax = int(cm[i] + spw) + 1
+            ymax = int(cm[i] + traceWidth) + 1
 
-        if bkw > 0:  # Subtract background
-            # backgroundMin is the center found for the previous column minus the bkw (background width)
+        if backgroundWidth > 0:  # Subtract background
+            # backgroundMin is the center found for the previous column minus the backgroundWidth (background width)
             # location of lower background sample
-            backgroundMin = cm[i - 1] - bkw
+            backgroundMin = cm[i - 1] - backgroundWidth
             # location of top background sample
-            backgroundMax = cm[i - 1] + bkw
+            backgroundMax = cm[i - 1] + backgroundWidth
 
             # do not go outside of the array
-            if backgroundMax > data_array.shape[0]:
-                backgroundMax = data_array.shape[0] - 1
+            if backgroundMax > dataArray.shape[0]:
+                backgroundMax = dataArray.shape[0] - 1
             if backgroundMin < 0:
                 backgroundMin = 0
 
             # find the values to subtract from the array 
-            backgroundMax_val = data_array[backgroundMax, i]
-            backgroundMin_val = data_array[backgroundMin, i]
+            backgroundMax_val = dataArray[backgroundMax, i]
+            backgroundMin_val = dataArray[backgroundMin, i]
             bk_mean = (backgroundMax_val + backgroundMin_val) / 2.
 
         else:
             bk_mean = 0.0  # do not subtract background value
 
         # centroid eqn for column 1: 
-        # (Sum(data_array[j,1]) * j / Sum(data_array[j,1]))
+        # (Sum(dataArray[j,1]) * j / Sum(dataArray[j,1]))
 
         # for each column (i)  find the sum (centroid_value_j * y_j) 
         # where centroid_value_j is the value at y=j,x=i         
 
-        cm[i] = ndimage.measurements.center_of_mass(data_array[int(ymin):int(ymax) + 1, i] - bk_mean)[0] + ymin
+        cm[i] = ndimage.measurements.center_of_mass(dataArray[int(ymin):int(ymax) + 1, i] - bk_mean)[0] + ymin
 
-        # return data_array[:,i]
+        # return dataArray[:,i]
         if cm[i] is np.inf or cm[i] is -np.inf:  # This happens when we went off array
             return np.array(0.0), 9999
 

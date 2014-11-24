@@ -68,9 +68,10 @@ class Trace_order_utils(object):
                 # background subtraction            
                 # ct is the centroid fit to the top of the order
                 # bft is bad fit top = number of times spectroid had to self-correct
-                self.top_spectroid, bft = spectroid(self.flatobj.tops, dloc=self.lhs_top, spw=self.reductionobj.data_dict['spw'],
-                                         bkw=0, trace_mean=True, trace_last=False,
-                                         trace_delta=self.reductionobj.data_dict['trace_delta'])
+
+                self.top_spectroid, bft = spectroid(self.flatobj.tops, traceWidth=self.reductionobj.data_dict['spw'],
+                                                    backgroundWidth=0, startingLocation=self.lhs_top, traceMean=True,
+                                                    traceLast=False, traceDelta=self.reductionobj.data_dict['trace_delta'])
                 print self.reductionobj.data_dict['spw'], self.reductionobj.data_dict['trace_delta']
                 self.reductionobj.logger.info('had to self correct on top = ' + str(bft) + ' times ')
                 if bft > fudge_constants.Nirspec_fudge_constants.badfit_limit:
@@ -83,9 +84,9 @@ class Trace_order_utils(object):
                 except:
                     self.traced_top = False
 
-                self.bot_spectroid, bfb = spectroid(self.flatobj.bots, dloc=self.lhs_bot, spw=self.reductionobj.data_dict['spw'],
-                                         bkw=0, trace_mean=True, trace_last=False,
-                                         trace_delta=self.reductionobj.data_dict['trace_delta'])
+                self.bot_spectroid, bfb = spectroid(self.flatobj.bots, traceWidth=self.reductionobj.data_dict['spw'],
+                                                    backgroundWidth=0, startingLocation=self.lhs_bot, traceMean=True,
+                                                    traceLast=False, traceDelta=self.reductionobj.data_dict['trace_delta'])
 
                 self.reductionobj.logger.info('had to self correct on bottom = ' + str(bfb) + ' times ')
                 if bfb > fudge_constants.Nirspec_fudge_constants.badfit_limit:
