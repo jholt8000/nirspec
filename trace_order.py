@@ -72,7 +72,6 @@ class Trace_order_utils(object):
                 self.top_spectroid, bft = spectroid(self.flatobj.tops, traceWidth=self.reductionobj.data_dict['spw'],
                                                     backgroundWidth=0, startingLocation=self.lhs_top, traceMean=True,
                                                     traceLast=False, traceDelta=self.reductionobj.data_dict['trace_delta'])
-                print self.reductionobj.data_dict['spw'], self.reductionobj.data_dict['trace_delta']
                 self.reductionobj.logger.info('had to self correct on top = ' + str(bft) + ' times ')
                 if bft > fudge_constants.Nirspec_fudge_constants.badfit_limit:
                     self.traced_top = False

@@ -92,9 +92,10 @@ class LineId(object):
 
     def identify(self, ohx, ohy):
         """
+        Matches up max lines in list of real sky data and catalogue of known sky locations and intensities
 
-        :param ohx: list of oh line locations
-        :param ohy: list of oh line intensities
+        :param ohx: list of known line locations from table
+        :param ohy: list of known line intensities from table
         :return: self.matchesdx,
             self. matchesohx
             self.matchesohy
@@ -177,12 +178,6 @@ class LineId(object):
             bigohy2 = bigohy
             bigidx2 = bigidx
             happened = 0
-
-            if debug:
-                print 'bigdx=', bigdx
-                print 'bigohx2=', bigohx2
-                print 'bigohy2=', bigohy2
-                print 'bigidx=', bigidx
 
             for i in range(0, len(bigdx) - 1):
                 if bigdx[i + 1] - bigdx[i] < 2:

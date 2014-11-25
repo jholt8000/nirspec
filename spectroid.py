@@ -16,7 +16,6 @@ Created on Thu Mar 28 10:30:41 2013
 import numpy as np
 from scipy import ndimage
 
-
 def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
               traceLast=False, traceDelta=1.9):
     """ Find centroids for each column in dataArray -- only works horizontally
@@ -42,19 +41,13 @@ def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926
     """
 
     # initialize "center of mass" array to be populated with centroids
-    # cm=np.zeros(dataArray.shape[1])
     cm = np.zeros(dataArray.shape[1])
-
-    cm2 = []
-    # R -= R.sum(0) / len(R)
 
     # badfit is a measure of how many times routine had to correct for bad centroid
     badfit = 0
 
     # first centroid will be starting location input parameter
-    # cm[0]=startingLocation
     cm[0] = startingLocation
-    cm2.append(startingLocation)
     xmin = 1
     xmax = dataArray.shape[1]
 

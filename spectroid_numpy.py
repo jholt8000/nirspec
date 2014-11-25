@@ -21,8 +21,8 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
               trace_last=False, trace_delta=1.9):
     """ Find centroids for each column in data_array -- only works horizontally
 
-     data_array: 2d numpy data array, usually read in from pyfits
-     spw=10: is distance away, up and down, from center to search for centroid
+     data_array: 2d numpy data array
+     spw=10: distance away, up and down, from center to search for centroid
      bkw=30: is background distance from center to subtract before finding centroid
      dloc=y: starting location for centroid at x=0
      trace_mean=True: if trace_mean is true and centroid found is 
@@ -41,8 +41,6 @@ def spectroid(data_array, spw=10, bkw=30, dloc=926, trace_mean=True,
     centroiding went outside of centroid[i-1]*trace_delta
     """
 
-
-    print 'type of data array=',type(data_array)
     # initialize "center of mass" array to be populated with centroids
     # cm=np.zeros(data_array.shape[1])
     cm = []

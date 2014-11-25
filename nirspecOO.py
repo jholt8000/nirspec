@@ -248,10 +248,7 @@ class Main():
             orig_pix_x_stack = np.hstack(orig_pix_x)
             #try:
             order_number_array_stack = 1. / np.hstack(order_number_array)
-            print 'onas=',order_number_array_stack
             matched_sky_line_stack = np.hstack(matched_sky_line)
-            print 'msls=',matched_sky_line_stack
-            print "orig_pix_x_stack=",orig_pix_x_stack
             p1 = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
                                          np.array(order_number_array_stack),
                                          np.array(matched_sky_line_stack), logger=self.logger,

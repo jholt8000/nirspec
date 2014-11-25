@@ -40,13 +40,9 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
 #                      21636.973, 21802.111, 21873.348])
 ##    
 
+    testing = False
+
     dataZ_orig = dataZ
-    print 'dataX=',dataX
-    print 'dataY=',dataY
-    print 'dataZ=',dataZ
-
-    print 'shapes=',dataX.shape, dataY.shape, dataZ.shape
-
 
     dataXX, dataYY = scipy.meshgrid(dataX,dataY) 
     nx,ny=100,100
@@ -57,34 +53,34 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     bad_points=[]
     #print __residual(p0, dataZZ, dataXX, dataYY) 
     sigma=100.
-    print len(dataZ)
-    p1, pcov, infodict, errmsg, success = scipy.optimize.leastsq(__residual, x0=p0, args=(dataZ, dataX, dataY), full_output=1)     
-
-    pl.figure(14,figsize=(15,8))
-    pl.clf()
-    ax1=pl.subplot(411)
-    pl.title("2d fitting")
-            #pl.plot(sciorder.dx_2dfit,sciorder.cont,'r',label='avg of central rows')
-            #pl.xlim([sciorder.dx_2dfit[0],sciorder.dx_2dfit[-1]])
-    ax2=pl.subplot(412)
-    ax3=pl.subplot(413)       
-    ax4=pl.subplot(414)
+    p1, pcov, infodict, errmsg, success = scipy.optimize.leastsq(__residual, x0=p0, args=(dataZ, dataX, dataY), full_output=1)
     k=0
-    
-    datax_forplot=dataX
-    datay_forplot=dataY
-    dataz_forplot=dataZ
-    points = ['r.','g.','c.','k.','m.','b.','y.',
-              'rx','gx','cx','kx','mx','bx','yx',
-              'r*','g*','c*','k*','m*','b*','y*','r.','g.','c.','k.','m.','b.','y.',
-              'rx','gx','cx','kx','mx','bx','yx',
-              'r*','g*','c*','k*','m*','b*','y*']
-              
-    lines = ['r-.','g.-','c-.','k-.','m-.','b-.','y-.',
-              'r--','g--','c--','k--','m--','b--','y--',
-              'r-','g-','c-','k-','m-','b-','y-','r-.','g.-','c-.','k-.','m-.','b-.','y-.',
-              'r--','g--','c--','k--','m--','b--','y--',
-              'r-','g-','c-','k-','m-','b-','y-']
+
+    if testing:
+        pl.figure(14,figsize=(15,8))
+        pl.clf()
+        ax1=pl.subplot(411)
+        pl.title("2d fitting")
+                #pl.plot(sciorder.dx_2dfit,sciorder.cont,'r',label='avg of central rows')
+                #pl.xlim([sciorder.dx_2dfit[0],sciorder.dx_2dfit[-1]])
+        ax2=pl.subplot(412)
+        ax3=pl.subplot(413)
+        ax4=pl.subplot(414)
+
+        datax_forplot=dataX
+        datay_forplot=dataY
+        dataz_forplot=dataZ
+        points = ['r.','g.','c.','k.','m.','b.','y.',
+                  'rx','gx','cx','kx','mx','bx','yx',
+                  'r*','g*','c*','k*','m*','b*','y*','r.','g.','c.','k.','m.','b.','y.',
+                  'rx','gx','cx','kx','mx','bx','yx',
+                  'r*','g*','c*','k*','m*','b*','y*']
+
+        lines = ['r-.','g.-','c-.','k-.','m-.','b-.','y-.',
+                  'r--','g--','c--','k--','m--','b--','y--',
+                  'r-','g-','c-','k-','m-','b-','y-','r-.','g.-','c-.','k-.','m-.','b-.','y-.',
+                  'r--','g--','c--','k--','m--','b--','y--',
+                  'r-','g-','c-','k-','m-','b-','y-']
 
     while len(dataZ) > lower_len_points-1. and sigma > sigma_max:
         
@@ -95,15 +91,14 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
         if (len(dataZ) > len(p0)) and pcov is not None:
                 s_sq = (__residual(p1,dataZ,dataX,dataY)**2).sum() / (len(dataY) - len(p0))
                 
-                print 'newoh=',newoh
-                print 'dataZ=',dataZ
-                print 'k=',k
-                ax1.plot(newoh, dataZ, points[k], newoh, dataZ, lines[k], label='fit')
-                ax2.plot(__residual(p1,dataz_forplot, datax_forplot, datay_forplot),
-                        points[k],__residual(p1, dataz_forplot, datax_forplot, datay_forplot), lines[k], label=str(k)+' fit')
-                #ax2.ylabel('Residuals')
-                ax3.plot(dataX, dataZ,points[k],dataX, dataZ, lines[k], label=str(k)+' fit')
-                ax4.plot(1./dataY, dataZ,points[k],1./dataY, dataZ, lines[k], label=str(k)+' fit')
+                if testing:
+
+                    ax1.plot(newoh, dataZ, points[k], newoh, dataZ, lines[k], label='fit')
+                    ax2.plot(__residual(p1,dataz_forplot, datax_forplot, datay_forplot),
+                            points[k],__residual(p1, dataz_forplot, datax_forplot, datay_forplot), lines[k], label=str(k)+' fit')
+                    #ax2.ylabel('Residuals')
+                    ax3.plot(dataX, dataZ,points[k],dataX, dataZ, lines[k], label=str(k)+' fit')
+                    ax4.plot(1./dataY, dataZ,points[k],1./dataY, dataZ, lines[k], label=str(k)+' fit')
 
                 var = ((__residual(p1,dataZ,dataX,dataY)**2).sum()) / (len(dataZ)-1)
 
@@ -135,10 +130,10 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
             #logger.info('removed matched oh line from fit '+str(dataX[residuals.argmax()]))
             #logger.info('removed matched oh line from fit '+str(dataZ[residuals.argmax()]))
             #print 'index = ',residuals.argmax(),' residual = ',residuals[residuals.argmax()]
-            
-            dataz_forplot[residuals.argmax()] = dataz_forplot[residuals.argmin()]
-            datax_forplot[residuals.argmax()] = datax_forplot[residuals.argmin()]
-            datay_forplot[residuals.argmax()] = datay_forplot[residuals.argmin()]
+            if testing:
+                dataz_forplot[residuals.argmax()] = dataz_forplot[residuals.argmin()]
+                datax_forplot[residuals.argmax()] = datax_forplot[residuals.argmin()]
+                datay_forplot[residuals.argmax()] = datay_forplot[residuals.argmin()]
 
             dataZ = np.delete(dataZ, residuals.argmax())
             dataX = np.delete(dataX, residuals.argmax())
@@ -150,18 +145,15 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
         
         k+=1
      
-    logger.info('sigma='+str(sigma))               
+    #logger.info('sigma='+str(sigma))
     logger.info('std_error for each parameter='+str(std_error))
 
     dataZZ = p1[0] + p1[1]*dataXX + p1[2]*dataXX**2 + p1[3]*dataYY + p1[4]*dataXX*dataYY + p1[5]*(dataXX**2)*dataYY 
-    
-    pl.legend()    
-    
-    
-    
-    pl.figure(15)
-    pl.clf()
-    pl.plot(newoh, dataZ,'b.',newoh,dataZ,'b')
+    if testing:
+        pl.legend()
+        pl.figure(15)
+        pl.clf()
+        pl.plot(newoh, dataZ,'b.',newoh,dataZ,'b')
 
     ## plot data 
 #    pylab.close('all') 
