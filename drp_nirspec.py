@@ -34,7 +34,7 @@ def main(datadir, outdir, utdate='default'):
     if outdir[-1] != '/':
         outdir += '/'
     if datadir[-1] != '/':
-        datadir = datadir + '/'
+        datadir += '/'
 
     startTime = datetime.now()
     # os.system("logger -p local3.debug nirespec_drp: Started")
@@ -77,7 +77,8 @@ def main(datadir, outdir, utdate='default'):
         if len(fitsfile) < 3:
             continue
 
-        if fitsfile.endswith('gz'): os.system('gunzip ' + fitsfile)
+        if fitsfile.endswith('gz'):
+            os.system('gunzip ' + fitsfile)
         fitsfile = fitsfile.rstrip('.gz')
         header = pf.getheader(fitsfile)
         try:
@@ -105,7 +106,7 @@ def main(datadir, outdir, utdate='default'):
             flat_files[fitsfile].append((disppos, thetaE, filname, slitname))
         elif koaimtyp == 'dark':
             dark_files[fitsfile] = []
-            dark_files[fitsfile].append((elaptime))
+            dark_files[fitsfile].append(elaptime)
         else:
             print fitsfile + ' koaimtype=', koaimtyp
 
@@ -200,6 +201,5 @@ if __name__ == "__main__":
             utdate = 'default'
     else:
         p.error('Wrong arguments')
-
 
     main(datadir, outdir, utdate)

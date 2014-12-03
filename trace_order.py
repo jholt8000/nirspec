@@ -4,8 +4,6 @@ Created on Tue Jul 01 15:11:52 2014
 
 @author: jholt
 """
-from fudge_constants import Nirspec_fudge_constants as nfc
-# reload(fudge_constants)
 import fudge_constants
 
 reload(fudge_constants)
@@ -46,11 +44,11 @@ class Trace_order_utils(object):
         self.lhs_top_theory, self.lhs_bot_theory, self.dx = self.reductionobj.nh.get_theory_order_pos(
             self.reductionobj.order_num)
 
-        self.reductionobj.logger.info('Theory -- left bot = ' + str(int(self.lhs_bot_theory)) + \
+        self.reductionobj.logger.info('Theory -- left bot = ' + str(int(self.lhs_bot_theory)) +
                                       ' left top = ' + str(int(self.lhs_top_theory)))
 
-        if self.lhs_top_theory < self.sciobj.data.shape[
-            0] + fudge_constants.Nirspec_fudge_constants.total_chip_padding and self.lhs_bot_theory > -fudge_constants.Nirspec_fudge_constants.total_chip_padding:
+        if (self.lhs_top_theory < self.sciobj.data.shape[0] + fudge_constants.NirspecFudgeConstants.total_chip_padding
+            and self.lhs_bot_theory > -fudge_constants.NirspecFudgeConstants.total_chip_padding):
 
             self.lhs_top = self.determine_lhs_edge_pos(self.flatobj.tops, self.lhs_top_theory,
                                                        self.reductionobj.data_dict)
@@ -64,31 +62,34 @@ class Trace_order_utils(object):
             if self.lhs_top > self.lhs_bot:
 
                 # # spectroid on top and bottom of order location #####
-                #call centroiding task, using the location of the peak and zero 
+                # call centroiding task, using the location of the peak and zero
                 # background subtraction            
                 # ct is the centroid fit to the top of the order
                 # bft is bad fit top = number of times spectroid had to self-correct
 
                 self.top_spectroid, bft = spectroid(self.flatobj.tops, traceWidth=self.reductionobj.data_dict['spw'],
                                                     backgroundWidth=0, startingLocation=self.lhs_top, traceMean=True,
-                                                    traceLast=False, traceDelta=self.reductionobj.data_dict['trace_delta'])
+                                                    traceLast=False,
+                                                    traceDelta=self.reductionobj.data_dict['trace_delta'])
                 self.reductionobj.logger.info('had to self correct on top = ' + str(bft) + ' times ')
-                if bft > fudge_constants.Nirspec_fudge_constants.badfit_limit:
+                if bft > fudge_constants.NirspecFudgeConstants.badfit_limit:
                     self.traced_top = False
                 else:
                     self.traced_top = True
 
-                try:  #where to cut out the array to isolate order
+                try:
+                    # determine highest point to decide where to cut out the array to isolate order
                     self.highest_top = max(self.top_spectroid[0], self.top_spectroid[1010])
                 except:
                     self.traced_top = False
 
                 self.bot_spectroid, bfb = spectroid(self.flatobj.bots, traceWidth=self.reductionobj.data_dict['spw'],
                                                     backgroundWidth=0, startingLocation=self.lhs_bot, traceMean=True,
-                                                    traceLast=False, traceDelta=self.reductionobj.data_dict['trace_delta'])
+                                                    traceLast=False,
+                                                    traceDelta=self.reductionobj.data_dict['trace_delta'])
 
                 self.reductionobj.logger.info('had to self correct on bottom = ' + str(bfb) + ' times ')
-                if bfb > fudge_constants.Nirspec_fudge_constants.badfit_limit:
+                if bfb > fudge_constants.NirspecFudgeConstants.badfit_limit:
                     self.traced_bot = False
                 else:
                     self.traced_bot = True
@@ -115,7 +116,6 @@ class Trace_order_utils(object):
                     self.trace_success = False
                     self.lhs_top = self.lhs_top_theory
 
-
             else:
                 self.reductionobj.logger.info('top of order cannot be below bottom')
                 self.reductionobj.logger.info('skipping order: ' + str(self.reductionobj.order_num))
@@ -130,29 +130,29 @@ class Trace_order_utils(object):
             self.fudge_padding()
             self.smooth_spectroid()
 
-        if self.avg_spectroid.any(): self.trace_success = True
+        if self.avg_spectroid.any():
+            self.trace_success = True
 
     def fudge_padding(self):
         # if order is very curved, add a bit more padding to
         # ensure we do not interpolate into the continuum.
-        ### This should be elsewhere ###
+        # ## This should be elsewhere ###
         if abs(self.avg_spectroid[0] - self.avg_spectroid[-1]) > 20.:
-            self.padding = self.padding + 10.
+            self.padding += 10.
 
         if abs(self.avg_spectroid[0] - self.avg_spectroid[-1]) > 40.:
-            self.padding = self.padding + 10.
+            self.padding += 10.
 
     def smooth_spectroid(self):
         self.reductionobj.logger.info('fitting a polynomial function from spectroid ')
 
         # smooth out the spectroid fit
         # fitting a 3rd order polynomial using least squares
-        self.avg_spectroid, p0 = astro_math.fit_poly(self.avg_spectroid, xes='default',
-                                          deg=3)
+        self.avg_spectroid, p0 = astro_math.fit_poly(self.avg_spectroid, xes='default', deg=3)
 
     def shift_order(self):
 
-        if self.bot_spectroid.any() :
+        if self.bot_spectroid.any():
 
             if float(self.bot_spectroid[0]) > float(self.padding):
                 # shift the order edge trace to be in the correct place in
@@ -172,8 +172,8 @@ class Trace_order_utils(object):
             self.top_spectroid = self.top_spectroid - self.padding + self.lhs_bot
 
     def determine_lhs_edge_pos(self, edges, theory_lhs, data_dict):
-        '''  find location of either top or bottom of the order using theoretical position
-        as a starting point '''
+        """  find location of either top or bottom of the order using theoretical position
+        as a starting point """
         # Find the peaks in the shifted/subracted flat file near the theoretical peaks
         lhs_edge_pos = self.reductionobj.nh.get_actual_order_pos(edges, theory_lhs,
                                                                  data_dict['threshold'])
@@ -201,5 +201,3 @@ class Trace_order_utils(object):
 
         # return variable because it could be for top or bottom location
         return lhs_edge_pos
-         
- 

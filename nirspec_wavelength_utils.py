@@ -11,7 +11,7 @@ reload(spectroid)
 # from numpy import fft
 # from scipy import optimize
 import astro_math
-from fudge_constants import Nirspec_fudge_constants as nfc
+from fudge_constants import NirspecFudgeConstants as nfc
 
 try:
     from scipy.signal import argrelextrema
@@ -96,13 +96,13 @@ class LineId(object):
 
         :param ohx: list of known line locations from table
         :param ohy: list of known line intensities from table
-        :return: self.matchesdx,
-            self. matchesohx
-            self.matchesohy
+        :return: self.matchesdx: list of real data x locations of sky lines
+            self. matchesohx: list of sky table x location matched sky lines
+            self.matchesohy: list of sky table intensities of matched lines
             self.bigohx
             self.bigohy
-            self.identify_status
-            self.matchesidx
+            self.identify_status: 1=success
+            self.matchesidx:
 
         """
         self.identify_status = 0
@@ -110,7 +110,6 @@ class LineId(object):
         dx = np.array(self.dx)
 
         # if dx.min() < 20500:
-        # debug=True
         dy = np.array(self.sky)
         self.bigohx = np.array([])
         self.bigohy = np.array([])
@@ -119,6 +118,7 @@ class LineId(object):
         self.matchesdx = np.array([])
         self.matchesidx = np.array([])
 
+        # ## Open, narrow down, and clean up line list ###
         # only look at the part of sky line list that is around the theory locations
         locohx = np.intersect1d(np.where(ohx < dx[-1] + 20)[0],
                                 np.where(ohx > dx[0] - 20)[0])
@@ -132,7 +132,7 @@ class LineId(object):
 
         deletelist = []
 
-        # remove 'overlapping' sky lines 
+        # remove 'overlapping' or too close sky lines
         if bigohy.any():
             for i in range(1, len(bigohy)):
                 if abs(bigohx[i] - bigohx[i - 1]) < nfc.sky_overlap_threshold:
@@ -140,8 +140,11 @@ class LineId(object):
             bigohy = np.delete(bigohy, deletelist, None)
             bigohx = np.delete(bigohx, deletelist, None)
         else:
-            return np.array([]), np.array([]), np.array([]), bigohx, bigohy, 'nomatch'
-        # look for relative maxes in dy (real sky line peak values) 
+            # there were no sky lines in the table that match theoretical wavelength range
+            return
+
+        # ## Open, narrow down, clean up sky line list
+        # look for relative maxes in dy (real sky line peak values)
         if argrelextrema(dy, np.greater)[0].any():
             relx = dx[argrelextrema(dy, np.greater)[0]]
             rely = dy[argrelextrema(dy, np.greater)[0]]
@@ -149,11 +152,12 @@ class LineId(object):
 
             # bixdx is the locations (in x) of any sky peak maximums greater than threshold sig
             bigdx = relx[np.where(rely > nfc.sky_threshold * rely.mean())]
+            # bigidx are the intensities of the sky peak maximums
             bigidx = idx1[np.where(rely > nfc.sky_threshold * rely.mean())]
 
         else:
             # couldn't find any relative maxes in sky 
-            return np.array([]), np.array([]), np.array([]), bigohx, bigohy, 'nomatch'
+            return
 
         deletelist = []
 
@@ -165,6 +169,8 @@ class LineId(object):
         bigdx = np.delete(bigdx, deletelist, None)
         bigidx = np.delete(bigidx, deletelist, None)
 
+        # The two arrays to match are bigdx and bigohx
+
         matchesohx = []
         matchesohy = []
         matchesdx = []
@@ -172,24 +178,28 @@ class LineId(object):
 
         if bigohx.any() and bigdx.any():
 
+            # ## First look for doublets ###
+
             # search for shifted doublet
             bigdx2 = bigdx
             bigohx2 = bigohx
             bigohy2 = bigohy
             bigidx2 = bigidx
+            # happened is a counter of doublets matched, removed from bigdx, bigohx and added to match list
             happened = 0
 
             for i in range(0, len(bigdx) - 1):
                 if bigdx[i + 1] - bigdx[i] < 2:
                     if debug:
                         print bigdx[i], ' and ', bigdx[i + 1], 'possible doublet'
-                    # locx is the part of bigohx  within +/- 4 angstrom of the bigdx possible doublet
+
+                    # locx is the section of bigohx  within +/- 4 angstrom of the bigdx possible doublet
                     locx = np.intersect1d(np.where(bigohx2 > (bigdx[i] - 4))[0],
                                           np.where(bigohx2 < (bigdx[i + 1] + 4))[0])
                     if debug:
                         print 'locx=', locx
 
-                    if len(locx) > 1:  # there has to be more than two lines within the range for doublet
+                    if len(locx) > 1:  # there has to be more than two lines within the range for matched doublet
 
                         if len(locx) > 2:
                             # found more than 2 possible sky lines to match with doublet
@@ -202,9 +212,10 @@ class LineId(object):
                             locxfix = np.zeros(2, dtype=np.int)
 
                             if len(yslice) > 0:
-                                locxfix[0] = np.argmax(yslice)  # location of the peak in yslice
+                                # location of the peak in the yslice
+                                locxfix[0] = np.argmax(yslice)  #
                             else:
-                                return np.array([]), np.array([]), np.array([]), bigohx, bigohy, 'nomatch'
+                                continue
 
                             yslice = np.delete(yslice, locxfix[0])  # remove the max from yslice
 
@@ -226,8 +237,8 @@ class LineId(object):
                             for j in range(0, 1):
                                 if debug:
                                     print 'j=', j
-                                if (ohslice[j + 1] - ohslice[j]) < 2 and abs(ohslice[j] - bigdx2[i - 2 * happened]) < 6\
-                                        and abs(ohslice[j + 1] - bigdx2[i + 1 - 2 * happened]) < 6:
+                                if ((ohslice[j + 1] - ohslice[j]) < 2 and abs(ohslice[j] - bigdx2[i - 2 * happened]) < 6
+                                        and abs(ohslice[j + 1] - bigdx2[i + 1 - 2 * happened]) < 6):
                                     if debug:
                                         print ohslice[j], ohslice[j + 1], 'is same doublet as ', \
                                             bigdx2[i - 2 * happened], bigdx2[i + 1 - 2 * happened]
@@ -335,6 +346,7 @@ class LineId(object):
             self.identify_status = 1
             self.matchesidx = matchesidx
 
+
 def sanity_check(orig_pix_x, order_number_array, matched_sky_line):
     """
     tries to fit a line to each ID/OH value, throws out bad fits
@@ -344,17 +356,17 @@ def sanity_check(orig_pix_x, order_number_array, matched_sky_line):
     :return:
     """
 
-    i=0
+    i = 0
     while i < len(order_number_array):
         f1, residuals1, rank1, singular_values1, rcond1 = np.polyfit(orig_pix_x[i], matched_sky_line[i], 1, full=True)
         f2, residuals2, rank2, singular_values2, rcond2 = np.polyfit(orig_pix_x[i], matched_sky_line[i], 2, full=True)
 
         if float(residuals2) > 500:
-            print 'order number ',order_number_array[i][0],' is a bad fit'
+            print 'order number ', order_number_array[i][0], ' is a bad fit'
             orig_pix_x.pop(i)
             order_number_array.pop(i)
             matched_sky_line.pop(i)
-        i+=1
+        i += 1
 
     return orig_pix_x, order_number_array, matched_sky_linex
 

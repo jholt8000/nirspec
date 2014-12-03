@@ -6,7 +6,7 @@ Created on Tue Jul 01 10:43:26 2014
 """
 
 
-class Nirspec_fudge_constants(object):
+class NirspecFudgeConstants(object):
     lambda_linear_fit_threshold = 0.05
     disp_lower_limit = 0.95
     disp_upper_limit = 1.05

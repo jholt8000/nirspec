@@ -19,9 +19,9 @@ reload(nirspec_wavelength_utils)
 import array_manipulate
 
 reload(array_manipulate)
-import fits
+import keck_fits
 
-reload(fits)
+reload(keck_fits)
 
 import astro_math
 
@@ -106,15 +106,6 @@ class Main():
 
         """ Initialize reduction"""
 
-        self.sci, self.sciheader, self.sciname = fits.Handle_fits.get_array_and_header(sci_name)
-
-        if flat_name:
-            self.flat, self.flatheader, self.flatname = fits.Handle_fits.get_array_and_header(flat_name)
-
-        else:
-            print 'I need a flat to reduce science frame'
-            return
-
         self.dark_name = dark_name
         self.do_extract = do_extract
         self.do_darksub = do_darksub
@@ -133,51 +124,26 @@ class Main():
         self.sig_frac = sig_frac
         self.obj_lim = obj_lim
 
-        # self.reduce_nirspec()
+        self.sci, self.sciheader, self.sciname = keck_fits.Handle_fits.get_array_and_header(sci_name)
 
-    def reduce_nirspec(self):
+        if flat_name:
+            self.flat, self.flatheader, self.flatname = keck_fits.Handle_fits.get_array_and_header(flat_name)
 
-        """ takes input raw science and raw flat and produces a rectified, 
-        extracted, wavelength calibrated spectrum for quick-look purposes
-        :type self: object
-        """
-
-        # instantiate nirspec specific bookkeeping and header utils
-        self.nh = nirspec_util.NirspecHeader(self.sciheader)
-
-        nb = nirspec_util.NirspecBookkeeping(self.sciname,
-                                             outpath=self.outpath)
-
-        self.logger = nb.setup_logger()
-
-        self.logger.info(str('Starting Data Reduction for science file ' + self.sciname))
-
-        # Get pre-canned starting self.order_nums & self.order_num sizes for each filter
-        self.data_dict = self.nh.get_data_dict()
-
-        if self.data_dict['startord'] == 9999:
-            self.logger.error('Filter name ' + str(self.header['filname']) + ' is not ready')
+        else:
+            print 'I need a flat to reduce science frame'
             return
 
-            # instanciate sciobj and flatobj objects
-        sciobj = array_manipulate.SciArray(self.sci)
-        flatobj = array_manipulate.FlatArray(self.flat)
+        # instantiate nirspec specific bookkeeping and header utils
+        nh = nirspec_util.NirspecHeader(self.sciheader)
+        self.data_dict = nh.get_data_dict()
 
-        # this should be in a method
-        if self.dark_name:
-            sciobj.data -= self.dark_name
-            flatobj.data -= self.dark_name
+        # this starting self.order_num number is used in getpos function to find possible
+        # starting point for flatObj.centroid calculation
+        self.order_num = self.data_dict['startord']
 
-        # inherit self (current reduction) attributes to sciobj and flatobj
-        sciobj.__dict__.update(self.__dict__)
-        flatobj.__dict__.update(self.__dict__)
-
-        if self.cosmic_clean:
-            self.logger.info(str('cosmic ray cleaning using LA Cosmic'))
-
-            # cosmic clean sciobj.data and flatobj.data #
-            sciobj.cosmic()
-            flatobj.cosmic()
+        self.nb = nirspec_util.NirspecBookkeeping(self.sciname,
+                                                  outpath=self.outpath)
+        self.logger = self.nb.setup_logger()
 
         if self.sciheader['dispers'] == 'low':
             self.logger.info('low dispersion data')
@@ -186,22 +152,44 @@ class Main():
         else:
             self.low_disp = False
 
-        # this starting self.order_num number is used in getpos function to find possible 
-        # starting point for flatobj.centroid calculation    
-        self.order_num = self.data_dict['startord']
+    def reduce_nirspec(self):
 
-        # shift and subtract flat from itself 
-        # to get top and bottom starting locations
-        # sets flatobj.tops, flatobj.bots 
-        flatobj.make_tops_bots()
+        """ takes input raw science and raw flat and produces a rectified, 
+        extracted, wavelength calibrated spectrum for quick-look purposes
+        :type self: object
+        """
 
-        sciobj.do_extract_orig = sciobj.do_extract
+        self.logger.info(str('Starting Data Reduction for science file ' + self.sciname))
+
+        # Get pre-canned starting self.order_nums & self.order_num sizes for each filter
+
+        if self.data_dict['startord'] == 9999:
+            self.logger.error('Filter name ' + str(self.header['filname']) + ' is not ready')
+            return
+
+        # instantiate sciObj and flatObj objects
+        sciObj = array_manipulate.SciArray(self.sci)
+        flatObj = array_manipulate.FlatArray(self.flat)
+
+        # this should be in a method
+        if self.dark_name:
+            sciObj.data -= self.dark_name
+            flatObj.data -= self.dark_name
+
+        # inherit self (current cosmic ray reduction) attributes to sciObj and flatObj
+        sciObj.__dict__.update(self.__dict__)
+        flatObj.__dict__.update(self.__dict__)
+
+        if self.cosmic_clean:
+            self.logger.info(str('cosmic ray cleaning using LA Cosmic'))
+
+            # cosmic clean sciObj.data and flatObj.data #
+            sciObj.cosmic()
+            flatObj.cosmic()
 
         # initialize variables and lists
         lhs_top = 0
-        all_bad_sol = []
         all_order_objects = []
-        all_order_matches = []
         orig_pix_x = []
         order_number_array = []
         matched_sky_line = []
@@ -211,42 +199,38 @@ class Main():
         # flatfield correct, extract 1d 
         while self.order_num > 0 and lhs_top < 1034:
 
-            reduced_order_object = reduce_order.Reduce_order(self, sciobj, flatobj)
+            # ## This is the main reduction of each order ###
+            reduced_order_object = reduce_order.Reduce_order(self, sciObj, flatObj)
             reduced_order_object.reduce_order()
 
             lhs_top = reduced_order_object.traceobj.lhs_top
 
-            if reduced_order_object.lineobj is not None and self.do_extract:
+            if reduced_order_object.lineobj is not None:
 
+                # ## add the reduced_order_object with all arrays and info about reduction to master tuple
                 all_order_objects.append(reduced_order_object)
-
-                order_number_array.append(np.zeros(len(reduced_order_object.lineobj.matchesdx)) +self.order_num)
 
                 if reduced_order_object.found_wavelength:
                     # store wavelength solution
                     orig_pix_x.append((np.array(reduced_order_object.lineobj.matchesidx)))
-                    all_order_matches.append(
-                        (np.zeros(len(reduced_order_object.lineobj.matchesidx)) + self.order_num))
                     matched_sky_line.append((np.array(reduced_order_object.lineobj.matchesohx)))
-
-                else:
-                    all_bad_sol.append((reduced_order_object.lineobj.matchesdx,
-                                        reduced_order_object.lineobj.matchesohx,
-                                        reduced_order_object.lineobj.matchesidx, self.order_num))
+                    # ## create an array with the same length as the number of sky lines identified and matched
+                    order_number_array.append(np.zeros(len(reduced_order_object.lineobj.matchesdx)) + self.order_num)
 
             if lhs_top > 1034:
-                # break out early, don't go through all orders to order_num=1
+                # don't go through all orders to order_num=1 once we are off detector
                 self.order_num -= 100
             else:
                 self.order_num -= 1
 
-                # need to add a sanity checker to first fit some function to each order's OH and IDs
+                # TODO need to add a sanity checker to first fit some function to each order's OH and IDs
                 # opx, ona, msl = sanity_check(orig_pix_x, order_number_array, matched_sky_line)
 
         if len(orig_pix_x) > 0:
-            # reduce dimensions of each array into single 1d array, "flatten" array
+            # reduce dimensions of each array of matched sky lines from each order into
+            # single 1d array, "flatten" array
             orig_pix_x_stack = np.hstack(orig_pix_x)
-            #try:
+            # the 2d solution fits the inverse order number better
             order_number_array_stack = 1. / np.hstack(order_number_array)
             matched_sky_line_stack = np.hstack(matched_sky_line)
             p1 = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
@@ -254,26 +238,15 @@ class Main():
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.5)
 
-
-            print '2d lambda not working'
-
+        # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
+            newoh = twod_lambda_fit.applySolution(order_object)
 
-            # ## all this belongs elsewhere ###
-            newdx = np.arange(1024)
-            newy = 1. / order_object.sciorder.order_num
-            newoh = np.ravel(
-                p1[0] + p1[1] * newdx + p1[2] * newdx ** 2 + p1[3] * newy + p1[4] * newdx * newy + p1[5] * (
-                    newdx ** 2) * newy)
-
-            #setattr(reduced_order_object.sciorder, "dx_2dfit", astro_math.conv_ang_to_mu(newoh))
-            #reduced_order_object.sciorder.dx = astro_math.conv_ang_to_mu(reduced_order_object.sciorder.dx)
-            #reduced_order_object.lineobj.matchesohx = astro_math.conv_ang_to_mu(reduced_order_object.lineobj.matchesohx)
-            #reduced_order_object.lineobj.bigohx = astro_math.conv_ang_to_mu(reduced_order_object.lineobj.bigohx)
-
-                # ### fit a line to final x-axis
-            nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj, order_object.traceobj, order_object.flatobj, order_object.sciobj, newoh)
+            # ## make plots and output FITS files
+            self.nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj,
+                                                      order_object.traceobj, order_object.flatobj, order_object.sciobj,
+                                                      newoh)
 
         self.logger.info('Finished quicklook reduction for science file ' + self.sciname)
 
-        nb.close_logger()
+        self.nb.close_logger()

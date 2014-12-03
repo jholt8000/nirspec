@@ -16,6 +16,7 @@ Created on Thu Mar 28 10:30:41 2013
 import numpy as np
 from scipy import ndimage
 
+
 def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
               traceLast=False, traceDelta=1.9):
     """ Find centroids for each column in dataArray -- only works horizontally

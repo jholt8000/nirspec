@@ -1,5 +1,6 @@
 
 import nirspec_wavelength_utils
+import numpy as np
 import unittest
 import nirspec_test_data
 
@@ -7,7 +8,7 @@ import nirspec_test_data
 
 ### nirspec_wavelength_utils tests ###
 def test_2d_lambda_fit():
-    ''''''
+    """"""
     onas= [ 0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,
   0.02631579,  0.02631579,  0.02702703,  0.02702703,  0.02702703,  0.02702703,
   0.02702703,  0.02702703,  0.02777778,  0.02777778,  0.02777778,  0.02777778,

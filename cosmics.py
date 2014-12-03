@@ -82,8 +82,7 @@ dilstruct[4,4] = 0
 #	01110
 # and is used to dilate saturated stars and connect cosmic rays.
 
-
-class cosmicsimage:
+class cosmicsImage:
 
     def __init__(self, rawarray, pssl=0.0, gain=2.2, readnoise=10.0, sigclip = 5.0, sigfrac = 0.3, objlim = 5.0, satlevel = 50000.0, verbose=True):
         """
@@ -177,7 +176,6 @@ class cosmicsimage:
             print "Labeling done"
 
         return retdictlist
-
 
     def getdilatedmask(self, size=3):
         """
@@ -293,7 +291,7 @@ class cosmicsimage:
         This can then be used to avoid these regions in cosmic detection and cleaning procedures.
         Slow ...
         """
-        if verbose == None:
+        if verbose is None:
             verbose = self.verbose
         if verbose:
                 print "Detecting saturated stars ..."
@@ -497,7 +495,7 @@ class cosmicsimage:
         finalsel = np.logical_and(sp > self.sigcliplow, finalsel)
 
         # Again, we have to kick out pixels on saturated stars :
-        if self.satstars != None:
+        if self.satstars is not None:
             if verbose:
                 print "Masking saturated stars ..."
             finalsel = np.logical_and(np.logical_not(self.satstars), finalsel)
@@ -524,7 +522,8 @@ class cosmicsimage:
 
         return {"niter":nbfinal, "nnew":nbnew, "itermask":finalsel, "newmask":newmask}
 
-    def findholes(self, verbose = True):
+    @staticmethod
+    def findholes(verbose = True):
         """
         Detects "negative cosmics" in the cleanarray and adds them to the mask.
         This is not working yet.
@@ -591,7 +590,7 @@ class cosmicsimage:
         Stops if no cosmics are found or if maxiter is reached.
         """
 
-        if self.satlevel > 0 and self.satstars == None:
+        if self.satlevel > 0 and self.satstars is None:
             self.findsatstars(verbose=verbose)
 
         if verbose: print "Starting %i L.A.Cosmic iterations ..." % maxiter
@@ -663,7 +662,7 @@ def tofits(outfilename, pixelarray, hdr = None, verbose = True):
     if os.path.isfile(outfilename):
         os.remove(outfilename)
 
-    if hdr == None: # then a minimal header will be created
+    if hdr is None: # then a minimal header will be created
         hdu = fits.PrimaryHDU(pixelarray.transpose())
     else: # this if else is probably not needed but anyway ...
         hdu = fits.PrimaryHDU(pixelarray.transpose(), hdr)
