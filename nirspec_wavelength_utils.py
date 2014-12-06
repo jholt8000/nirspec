@@ -20,11 +20,35 @@ except:
 
 
 class LineId(object):
-    def __init__(self, low_disp, dx, sky):
+    def __init__(self, dx, sky, low_disp):
 
         self.low_disp = low_disp
         self.dx = dx
         self.sky = sky
+
+        # # find and apply wavelength shift ###
+        # Read in the sky line list.
+        # skyline list is determined using low_disp and fudge_constants ohlinelist
+        self.ohx, self.ohy = self.read_OH()
+
+        # make a synthetic sky spectrum using line list information with width
+        # the size of the data and with sigma = 0.2 (found empirically)
+        self.fake_sky = self.gauss_sky(self.ohx, self.ohy, 0.2)
+
+        # Cross correlate data: self.lineobj.dx and fake_sky
+        # with the synthetic sky
+        self.lambda_shift = self.find_xcorr_shift(self.fake_sky)
+
+        if abs(self.lambda_shift) < nfc.max_shift_from_theory:
+            self.dx = self.dx + self.lambda_shift
+
+            # match sky lines
+        self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
+        self.identify_status, self.matchesidx = self.identify(self.ohx, self.ohy)
+
+        if self.identify_status < 1:
+            if abs(self.lambda_shift) < nfc.max_shift_from_theory:
+                self.dx = self.dx - self.lambda_shift
 
     def read_OH(self):
         """
@@ -48,8 +72,9 @@ class LineId(object):
                 linesx.append(float(line1[0]))
                 linesy.append(float(line1[1]))
 
-        self.ohx = linesx
-        self.ohy = linesy
+        return linesx, linesy
+        #self.ohx = linesx
+        #self.ohy = linesy
 
     def gauss_sky(self, ohx, ohy, sig):
         """create a synthetic sky spectrum using a linelist with postions and intensities
@@ -76,7 +101,8 @@ class LineId(object):
                 g = y[i] * np.exp(-(self.dx - x[i]) ** 2 / (2. * sig ** 2))
                 all_g = all_g + g
 
-        self.fake_sky = all_g
+        #self.fake_sky = all_g
+        return all_g
 
     def find_xcorr_shift(self, ohgs):
         """ find shift between synthetic sky spectrum and real sky spectrum"""
@@ -88,7 +114,8 @@ class LineId(object):
         xcorrshift = astro_math.arg_max_corr(ohg[1], self.sky)
 
         delta_x = (ohg[0][-1] - ohg[0][0]) / float(ohg[0].size)
-        self.lambda_shift = xcorrshift * delta_x
+        #self.lambda_shift = xcorrshift * delta_x
+        return xcorrshift * delta_x
 
     def identify(self, ohx, ohy):
         """
@@ -338,13 +365,14 @@ class LineId(object):
             # matchesohx.sort()
             matchesohx = matchesohx[oh_sort_indices]
 
-            self.matchesdx = matchesdx
-            self.matchesohx = matchesohx
-            self.matchesohy = matchesohy
-            self.bigohx = bigohx
-            self.bigohy = bigohy
-            self.identify_status = 1
-            self.matchesidx = matchesidx
+            return matchesdx, matchesohx, matchesohy, bigohx, bigohy, 1, matchesidx
+            #self.matchesdx = matchesdx
+            #self.matchesohx = matchesohx
+            #self.matchesohy = matchesohy
+            #self.bigohx = bigohx
+            #self.bigohy = bigohy
+            #self.identify_status = 1
+            #self.matchesidx = matchesidx
 
 
 def sanity_check(orig_pix_x, order_number_array, matched_sky_line):

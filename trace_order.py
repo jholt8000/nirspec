@@ -35,6 +35,8 @@ class Trace_order_utils(object):
         self.highest_top = -1
 
         self.trace_success = False
+        self.traced_bot = False
+        self.traced_top = False
 
     def trace_order(self):
 
@@ -72,11 +74,8 @@ class Trace_order_utils(object):
                                                     traceLast=False,
                                                     traceDelta=self.reductionobj.data_dict['trace_delta'])
                 self.reductionobj.logger.info('had to self correct on top = ' + str(bft) + ' times ')
-                if bft > fudge_constants.NirspecFudgeConstants.badfit_limit:
-                    self.traced_top = False
-                else:
+                if bft < fudge_constants.NirspecFudgeConstants.badfit_limit:
                     self.traced_top = True
-
                 try:
                     # determine highest point to decide where to cut out the array to isolate order
                     self.highest_top = max(self.top_spectroid[0], self.top_spectroid[1010])
@@ -89,9 +88,7 @@ class Trace_order_utils(object):
                                                     traceDelta=self.reductionobj.data_dict['trace_delta'])
 
                 self.reductionobj.logger.info('had to self correct on bottom = ' + str(bfb) + ' times ')
-                if bfb > fudge_constants.NirspecFudgeConstants.badfit_limit:
-                    self.traced_bot = False
-                else:
+                if bfb < fudge_constants.NirspecFudgeConstants.badfit_limit:
                     self.traced_bot = True
 
                 try:
@@ -127,7 +124,9 @@ class Trace_order_utils(object):
             self.trace_success = False
             self.lhs_top = self.lhs_top_theory
         if self.trace_success:
+            # update self.padding
             self.fudge_padding()
+            # make self.avg_spectroid
             self.smooth_spectroid()
 
         if self.avg_spectroid.any():

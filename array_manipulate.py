@@ -4,7 +4,6 @@ array manipulation utilities
 
 @author: jholt 20140315
 """
-import fits
 import numpy as np
 import scipy as sp
 import astro_math
@@ -37,7 +36,7 @@ class BaseArray(object):
 
     def __sub__(self, sub):
         """ subtract sub from array"""
-        data, dname = fits.Handle_fits.ensure_array(sub)
+        #data, dname = fits.Handle_fits.ensure_array(sub)
         return self.data - sub
 
     def mask_off_order(self, on_order):
@@ -47,8 +46,7 @@ class BaseArray(object):
        on_order: array
            array of same size as self.data with off-order masked
        """
-        self.data_masked = self.data * on_order
-        # return data_masked
+        return self.data * on_order
 
     def interp_shift(self, curve_array, orientation='vertical', pivot='middle'):
         """ shift array using scipy.interpolate
@@ -74,7 +72,7 @@ class BaseArray(object):
             # the function found 
             shift_curve_array = -1. * (curve_array - mid)
 
-        if pivot == 'peak':
+        elif pivot == 'peak':
             # first find the peak 
             if orientation == 'horizontal':
                 cross_cut = self.data.sum(axis=0)
@@ -106,7 +104,8 @@ class BaseArray(object):
 
         rectified = np.array(shifted)
         if orientation == 'vertical': rectified = rectified.transpose()
-        self.rectified = rectified
+        # self.rectified = rectified
+        return rectified
 
     def cosmic(self):
         """ call LA cosmic routine by Malte Tewes"""
@@ -118,7 +117,7 @@ class BaseArray(object):
         c.run(self.max_iter)
         self.data = c.cleanarray
 
-    def find_peak(self, order_shifted=False):
+    def find_peak(self, order_shifted = False):
         """ this should be in SciArray
         Parameters:
         ---------------
@@ -137,8 +136,9 @@ class BaseArray(object):
             peak = np.argmax(crosscut)
         else:
             peak = 0.0
-        self.peak = peak
-        self.crosscut = crosscut
+        return peak, crosscut
+        #self.peak = peak
+        #self.crosscut = crosscut
 
     def cut_out(self, padding=30., lower=10., upper=30., orientation='landscape'):
         """ cut out orders -
@@ -175,7 +175,8 @@ class BaseArray(object):
         if orientation != 'landscape':
             order_slice = order_slice.transpose()
 
-        self.order_slice = order_slice
+        #self.order_slice = order_slice
+        return order_slice
 
     def mask_order(self, upper_edge, lower_edge):
         """  use the traces of the orders to make on and off order arrays
@@ -200,8 +201,9 @@ class BaseArray(object):
         abovebot = y > lower_edge
         on_order = belowtop & abovebot
 
-        self.on_order = on_order
-        self.off_order = off_order
+        return on_order, off_order
+        # self.on_order = on_order
+        #self.off_order = off_order
 
 
 class SciArray(BaseArray):
@@ -287,11 +289,13 @@ class SciArray(BaseArray):
         if centroid_sky_sum.any():
             sky_line = centroid_sky_sum / fitnumber
             # pl.plot(sky_line,'g*')
-            self.sky_line_success = True
+            sky_line_success = True
         else:
             sky_line = NirspecFudgeConstants.badval
-            self.sky_line_success = False
-        self.sky_line = sky_line
+            sky_line_success = False
+
+        #self.sky_line = sky_line
+        return sky_line, sky_line_success
         # pl.figure(13)
         # pl.clf()
         # pl.plot(self.sky_line,'g*')
@@ -338,9 +342,10 @@ class SciArray(BaseArray):
             logger.error('WARNING cannot find a peak in order ' + str(order) + ' skipping extraction ')
             return 'ERROR', 'ERROR', 'ERROR'
 
-        self.ext_range = ext_range
-        self.sky_range_bot = sky_range_bot
-        self.sky_range_top = sky_range_top
+        return ext_range, sky_range_top, sky_range_bot
+        #self.ext_range = ext_range
+        #self.sky_range_bot = sky_range_bot
+        #self.sky_range_top = sky_range_top
 
     def get_sky(self, peak, sky_range_bot, sky_range_top):
 
@@ -363,10 +368,12 @@ class SciArray(BaseArray):
             skys = (skys1 + skys2) / (sky_height_top + sky_height_bot)
             skys = np.array(skys)
             skys = skys - np.median(skys)
-            self.skys = skys
+            skys = skys
 
         else:
-            self.skys = NirspecFudgeConstants.badval
+            skys = NirspecFudgeConstants.badval
+
+        return skys
 
     def sum_extract(self, ext_range, sky_range_bot, sky_range_top):
         """ extract peak
@@ -393,16 +400,16 @@ class SciArray(BaseArray):
             extracted = np.sum(data_array[peak - i, :] for i in ext_range)
             extracted /= len(ext_range)
             # sets self.skys
-            self.get_sky(peak, sky_range_bot, sky_range_top)
-            cont = extracted - self.skys  # subtract sky from peak
-            self.skys = self.skys - self.skys.mean()
-            self.cont = cont
-            self.extract_status = 1
+            skys = self.get_sky(peak, sky_range_bot, sky_range_top)
+            cont = extracted - skys  # subtract sky from peak
+            skys = skys - skys.mean()
+            extract_status = 1
         except:
-            self.cont = []
-            self.skys = 'bad'
-            self.extract_status = 0
+            cont = []
+            skys = 'bad'
+            extract_status = 0
 
+        return cont, skys, extract_status
 
 class FlatArray(BaseArray):
     """
@@ -469,8 +476,9 @@ class FlatArray(BaseArray):
         normalized[np.where(normalized == 0.0)] = 1.0
         normalized[np.where(normalized < 0.2)] = 1.0
 
-        self.normalized = normalized
-        self.flat_mean = flat_mean
+        return normalized, flat_mean
+        #self.normalized = normalized
+        #self.flat_mean = flat_mean
 
     def make_tops_bots(self):
         """

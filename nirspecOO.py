@@ -134,8 +134,8 @@ class Main():
             return
 
         # instantiate nirspec specific bookkeeping and header utils
-        nh = nirspec_util.NirspecHeader(self.sciheader)
-        self.data_dict = nh.get_data_dict()
+        self.nh = nirspec_util.NirspecHeader(self.sciheader)
+        self.data_dict = self.nh.get_data_dict()
 
         # this starting self.order_num number is used in getpos function to find possible
         # starting point for flatObj.centroid calculation
