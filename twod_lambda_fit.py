@@ -42,7 +42,8 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     # 21636.973, 21802.111, 21873.348])
     # #
 
-    testing = False
+    testing = True
+
     std_error = 9999
     newoh=9999
 
@@ -174,11 +175,11 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     # ax.set_zlabel('z')
     # pylab.show()
 
-    return p1
+    return p1, newoh, dataZZ
 
 
 def applySolution(order_object):
-    # ## all this belongs elsewhere ###
+
     newdx = np.arange(1024)
     newy = 1. / order_object.sciorder.order_num
     newoh = np.ravel(

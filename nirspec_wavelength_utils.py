@@ -20,12 +20,17 @@ except:
 
 
 class LineId(object):
-    def __init__(self, dx, sky, low_disp):
+    def __init__(self, dx, sky, low_disp, logger):
 
         self.low_disp = low_disp
         self.dx = dx
         self.sky = sky
-
+        self.matchesdx=[]
+        self.matchexohy=[]
+        self.bigohx=[]
+        self.bigohy=[]
+        self.identify_status=0
+        self.matchesidx=0
         # # find and apply wavelength shift ###
         # Read in the sky line list.
         # skyline list is determined using low_disp and fudge_constants ohlinelist
@@ -38,15 +43,20 @@ class LineId(object):
         # Cross correlate data: self.lineobj.dx and fake_sky
         # with the synthetic sky
         self.lambda_shift = self.find_xcorr_shift(self.fake_sky)
-
         if abs(self.lambda_shift) < nfc.max_shift_from_theory:
             self.dx = self.dx + self.lambda_shift
+            logger.info( 'applied the xcorr shift = ' + str(self.lambda_shift) )
 
             # match sky lines
-        self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
-        self.identify_status, self.matchesidx = self.identify(self.ohx, self.ohy)
+            id_tuple = self.identify(self.ohx, self.ohy)
+
+            if len(id_tuple) > 0:
+                self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
+                self.identify_status, self.matchesidx = id_tuple
 
         if self.identify_status < 1:
+            logger.info('wavelength utils : could not identify lines')
+            logger.info(' Removing xcorr shift ')
             if abs(self.lambda_shift) < nfc.max_shift_from_theory:
                 self.dx = self.dx - self.lambda_shift
 
@@ -138,12 +148,6 @@ class LineId(object):
 
         # if dx.min() < 20500:
         dy = np.array(self.sky)
-        self.bigohx = np.array([])
-        self.bigohy = np.array([])
-        self.matchesohx = np.array([])
-        self.matchesohy = np.array([])
-        self.matchesdx = np.array([])
-        self.matchesidx = np.array([])
 
         # ## Open, narrow down, and clean up line list ###
         # only look at the part of sky line list that is around the theory locations
@@ -168,7 +172,7 @@ class LineId(object):
             bigohx = np.delete(bigohx, deletelist, None)
         else:
             # there were no sky lines in the table that match theoretical wavelength range
-            return
+            return []
 
         # ## Open, narrow down, clean up sky line list
         # look for relative maxes in dy (real sky line peak values)
@@ -184,7 +188,7 @@ class LineId(object):
 
         else:
             # couldn't find any relative maxes in sky 
-            return
+            return []
 
         deletelist = []
 
@@ -365,7 +369,7 @@ class LineId(object):
             # matchesohx.sort()
             matchesohx = matchesohx[oh_sort_indices]
 
-            return matchesdx, matchesohx, matchesohy, bigohx, bigohy, 1, matchesidx
+            return [matchesdx, matchesohx, matchesohy, bigohx, bigohy, 1, matchesidx]
             #self.matchesdx = matchesdx
             #self.matchesohx = matchesohx
             #self.matchesohy = matchesohy

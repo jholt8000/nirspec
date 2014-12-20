@@ -117,25 +117,29 @@ class BaseArray(object):
         c.run(self.max_iter)
         self.data = c.cleanarray
 
-    def find_peak(self, order_shifted = False):
+    def find_peak(self, order_shifted = True):
         """ this should be in SciArray
-        Parameters:
         ---------------
         sciorder: sciArray object with data attribute
         order_shifted: Boolean
             if the order has been shifted or rectified use whole axis
 
         """
-
         if order_shifted:
             crosscut = self.data.sum(axis=1)
         else:
-            crosscut = self.data[:30]
+            #this isn't right
+            crosscut = self.data[:30].sum(axis=1)
 
         if crosscut.any():
+
             peak = np.argmax(crosscut)
+            print 'peak here = ',peak
+            location_of_peak = crosscut[peak]
+            print location_of_peak
         else:
             peak = 0.0
+
         return peak, crosscut
         #self.peak = peak
         #self.crosscut = crosscut
@@ -303,6 +307,8 @@ class SciArray(BaseArray):
     def setup_extraction_ranges(self, ext_height, sky_distance, sky_height,
                                 peak, order, logger):
 
+        print "ext_height, sky_distance, sky_height, peak, order=",ext_height, sky_distance, sky_height, peak, order
+
         if ext_height % 2:  # odd values typically across the continuum - recall range(-1, 2) is (-1, 0, 1)
             ext_range = range(int((1 - ext_height) / 2.), int((ext_height + 1) / 2.))
         else:  # even
@@ -316,7 +322,7 @@ class SciArray(BaseArray):
                               ext_range[0] - sky_distance + 1)  # [-10, -9, -8, -7, -6]
 
         if ((peak + sky_range_bot[-1] + 1) > self.data.shape[0]) or ((peak + sky_range_bot[0]) < 0):
-            logger.error(' bottom sky range ' + str(sky_range_bot) + ' outside of order')
+            logger.error(' array_manipulate.setup_extraction ranges: bottom sky range ' + str(sky_range_bot) + ' outside of order')
             logger.error('    trying smaller sky range and distance')
             sky_distance = min(peak - sky_range_bot, self.data.shape[0] - peak)
             sky_height = 2
@@ -324,28 +330,26 @@ class SciArray(BaseArray):
             if ext_range[0] - sky_distance + 1 < self.data.shape[0]:
                 sky_range_bot = range(ext_range[0] - sky_distance - sky_height + 1, ext_range[0] - sky_distance + 1)
             else:
-                logger.error('not using a bottom sky subtraction, peak is too close to edge')
+                logger.error(' array_manipulate.setup_extraction ranges: not using a bottom sky subtraction, peak is too close to edge')
                 sky_range_bot = []
 
         if (peak + sky_range_top[-1] + 1) > self.data.shape[0]:
-            logger.error('top sky range ' + str(sky_range_top) + ' outside of order')
+            logger.error(' array_manipulate.setup_extraction ranges: top sky range ' + str(sky_range_top) + ' outside of order')
             logger.error('    trying smaller sky range and distance')
             sky_distance = 1
             sky_height = 4
             if peak + sky_distance + sky_height < self.data.shape[0]:
                 sky_range_top = range(ext_range[-1] + sky_distance, ext_range[-1] + sky_distance + sky_height)
             else:
-                logger.error('not using a top sky subtraction, peak is too close to edge')
+                logger.error(' array_manipulate.setup_extraction ranges: not using a top sky subtraction, peak is too close to edge')
                 sky_range_top = []
 
         if self.data.shape[0] - peak < 2 or peak < 3:
-            logger.error('WARNING cannot find a peak in order ' + str(order) + ' skipping extraction ')
+            logger.error('WARNING  array_manipulate.setup_extraction ranges: cannot find a peak in order ' + str(order) + ' skipping extraction ')
             return 'ERROR', 'ERROR', 'ERROR'
 
         return ext_range, sky_range_top, sky_range_bot
-        #self.ext_range = ext_range
-        #self.sky_range_bot = sky_range_bot
-        #self.sky_range_top = sky_range_top
+
 
     def get_sky(self, peak, sky_range_bot, sky_range_top):
 
@@ -353,27 +357,27 @@ class SciArray(BaseArray):
         sky_height_top = len(sky_range_top)
 
         try:
-            skys1 = np.sum(self.data[peak + i, :] for i in sky_range_bot)
+            sky1 = np.sum(self.data[peak + i, :] for i in sky_range_bot)
         except:
-            skys1 = [0]
+            sky1 = [0]
             sky_height_bot = 0.
 
         try:
-            skys2 = np.sum(self.data[peak + i, :] for i in sky_range_top)
+            sky2 = np.sum(self.data[peak + i, :] for i in sky_range_top)
         except:
-            skys2 = [0]
+            sky2 = [0]
             sky_height_top = 0.
 
         if sky_height_top > 0. and sky_height_bot > 0.:
-            skys = (skys1 + skys2) / (sky_height_top + sky_height_bot)
-            skys = np.array(skys)
-            skys = skys - np.median(skys)
-            skys = skys
+            sky = (sky1 + sky2) / (sky_height_top + sky_height_bot)
+            sky = np.array(sky)
+            sky = sky - np.median(sky)
+            sky = sky
 
         else:
-            skys = NirspecFudgeConstants.badval
+            sky = NirspecFudgeConstants.badval
 
-        return skys
+        return sky
 
     def sum_extract(self, ext_range, sky_range_bot, sky_range_top):
         """ extract peak
@@ -399,17 +403,17 @@ class SciArray(BaseArray):
         try:
             extracted = np.sum(data_array[peak - i, :] for i in ext_range)
             extracted /= len(ext_range)
-            # sets self.skys
-            skys = self.get_sky(peak, sky_range_bot, sky_range_top)
-            cont = extracted - skys  # subtract sky from peak
-            skys = skys - skys.mean()
+            # sets self.sky
+            sky = self.get_sky(peak, sky_range_bot, sky_range_top)
+            cont = extracted - sky  # subtract sky from peak
+            sky = sky - sky.mean()
             extract_status = 1
         except:
             cont = []
-            skys = 'bad'
+            sky = 'bad'
             extract_status = 0
 
-        return cont, skys, extract_status
+        return cont, sky, extract_status
 
 class FlatArray(BaseArray):
     """

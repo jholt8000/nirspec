@@ -206,12 +206,13 @@ class Main():
             lhs_top = reduced_order_object.traceobj.lhs_top
 
             if reduced_order_object.lineobj is not None:
-
+                print 'matchesidx', reduced_order_object.lineobj.matchesidx
                 # ## add the reduced_order_object with all arrays and info about reduction to master tuple
                 all_order_objects.append(reduced_order_object)
-
+                print 'fw = ',reduced_order_object.found_wavelength
                 if reduced_order_object.found_wavelength:
                     # store wavelength solution
+                    print 'here2'
                     orig_pix_x.append((np.array(reduced_order_object.lineobj.matchesidx)))
                     matched_sky_line.append((np.array(reduced_order_object.lineobj.matchesohx)))
                     # ## create an array with the same length as the number of sky lines identified and matched
@@ -223,24 +224,29 @@ class Main():
             else:
                 self.order_num -= 1
 
-                # TODO need to add a sanity checker to first fit some function to each order's OH and IDs
-                # opx, ona, msl = sanity_check(orig_pix_x, order_number_array, matched_sky_line)
+
+        print 'orig_pix_x=',orig_pix_x
 
         if len(orig_pix_x) > 0:
             # reduce dimensions of each array of matched sky lines from each order into
             # single 1d array, "flatten" array
+
             orig_pix_x_stack = np.hstack(orig_pix_x)
             # the 2d solution fits the inverse order number better
             order_number_array_stack = 1. / np.hstack(order_number_array)
             matched_sky_line_stack = np.hstack(matched_sky_line)
-            p1 = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
+            p1, newoh, dataZZ = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
                                          np.array(order_number_array_stack),
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.5)
+            newoh = twod_lambda_fit.applySolution(p1)
+            print 'newoh=',newoh
 
+        else:
+            newoh = []
         # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
-            newoh = twod_lambda_fit.applySolution(order_object)
+
 
             # ## make plots and output FITS files
             self.nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj,

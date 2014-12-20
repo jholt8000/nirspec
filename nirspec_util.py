@@ -58,10 +58,10 @@ class NirspecBookkeeping(object):
         pl.figure(1)
         pl.clf()
         pl.title("Order=" + str(sciorder.order_num))
-        pl.plot(sciorder.dx, sciorder.skys, 'b', label='original theory sky')
+        pl.plot(sciorder.dx, lineobj.sky, 'b', label='original theory sky')
         if len(lineobj.bigohx) > 0:
             for i in np.arange(0, len(lineobj.matchesohx)):
-                pl.text(lineobj.matchesohx[i], sciorder.skys.max() + 100, str(lineobj.matchesohx[i]),
+                pl.text(lineobj.matchesohx[i], lineobj.sky.max() + 100, str(lineobj.matchesohx[i]),
                         rotation='vertical', fontsize='x-small')
             pl.plot(lineobj.bigohx, lineobj.bigohy, 'r+')
             pl.plot(lineobj.matchesohx, np.array(lineobj.matchesohy), 'k+')
@@ -75,24 +75,27 @@ class NirspecBookkeeping(object):
         # pf.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
         # np.array((sciorder.dx,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
 
+
         pl.figure(2)
         pl.clf()
         pl.title("Order=" + str(sciorder.order_num))
-        pl.plot(dx_2dfit, sciorder.skys, 'b', label='sky after 2dfit')
-        if len(lineobj.bigohx) > 0:
-            for i in np.arange(0, len(lineobj.matchesohx)):
-                pl.text(lineobj.matchesohx[i], sciorder.skys.max() + 100, str(lineobj.matchesohx[i]),
-                        rotation='vertical', fontsize='x-small')
-                # pl.text(lineobj.ohx[i],sciorder.skys.max()+100,str(lineobj.ohx[i]),rotation='vertical',
-                #         fontsize='x-small')
-            pl.plot(lineobj.bigohx, lineobj.bigohy, 'r+')
-            pl.plot(lineobj.matchesohx, np.array(lineobj.matchesohy), 'k+')
+        print 'dx_2dfit leng = ',len(dx_2dfit),' sky len=',len(lineobj.sky)
+        if len(dx_2dfit) > 0:
+            pl.plot(dx_2dfit, lineobj.sky, 'b', label='sky after 2dfit')
+            if len(lineobj.bigohx) > 0:
+                for i in np.arange(0, len(lineobj.matchesohx)):
+                    pl.text(lineobj.matchesohx[i], lineobj.sky.max() + 100, str(lineobj.matchesohx[i]),
+                            rotation='vertical', fontsize='x-small')
+                    # pl.text(lineobj.ohx[i],lineobj.sky.max()+100,str(lineobj.ohx[i]),rotation='vertical',
+                    #         fontsize='x-small')
+                pl.plot(lineobj.bigohx, lineobj.bigohy, 'r+')
+                pl.plot(lineobj.matchesohx, np.array(lineobj.matchesohy), 'k+')
 
-        pl.legend(loc=4)
-        pl.xlabel("$\AA$")
-        if allreduceobj.write_plots:
-            pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
-                       bbox_inches=0)
+            pl.legend(loc=4)
+            pl.xlabel("$\AA$")
+            if allreduceobj.write_plots:
+                pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
+                           bbox_inches=0)
         # if write_fits:
         # pf.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
         #            np.array((sciorder.dx_2dfit,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)

@@ -83,6 +83,7 @@ class Reduce_order(object):
         # Ensure that order was traced successfully and is on detector
         if not self.traceobj.trace_success:
             self.reduction.logger.info('order ' + str(self.reduction.order_num) + ' not on array')
+
             # return to main self.reduction and skip this order
             return
 
@@ -164,11 +165,13 @@ class Reduce_order(object):
         else:  # could not find fit along flat order edge
             self.reduction.logger.info('WARNING: did not find a good order fit, not rectifying spatially ')
             self.reduction.logger.info('         and therefore not extracting continuum ')
+            self.reduction.logger.error('Finished reducing order = ' + str(self.reduction.order_num))
+
             return
 
         # # determine sky and continuum locations  ####
         # take a the crosscut of the order and determine place off-peak for sky lines
-        peak, crosscut = self.sciorder.find_peak(rectified, order_shifted = False)
+        peak, crosscut = self.sciorder.find_peak()
 
 
         try:
@@ -212,31 +215,29 @@ class Reduce_order(object):
         # Gain = 4 e- / ADU  and readnoise = 625 e- = 156 ADU
         if do_extract:
 
-            # sets self.sciorder.cont, self.sciorder.skys, self.sciorder.extract_status
-            cont, skys, extract_status = self.sciorder.sum_extract(self.sciorder.ext_range, self.sciorder.sky_range_bot,
-                                      self.sciorder.sky_range_top)
+            # extract
+            cont, sky, extract_status = self.sciorder.sum_extract(ext_range, sky_range_bot,
+                                      sky_range_top)
 
             if extract_status == 0:
                 self.reduction.logger.error('could not extract order ' + str(self.reduction.order_num))
+                self.reduction.logger.error('Finished reducing order = ' + str(self.reduction.order_num))
                 return
 
             # identify sky lines with catalogue sky line locations
 
             # ### Wavelength skyline identification ########
-            self.lineobj = nirspec_wavelength_utils.LineId(self.sciorder.dx, skys, self.reduction.low_disp)
+            self.lineobj = nirspec_wavelength_utils.LineId(self.sciorder.dx, sky, self.reduction.low_disp,
+                                                           self.reduction.logger)
 
             self.reduction.logger.info(
-                'shift between sky list and real sky lines = ' + str(int(self.lineobj.lambda_shift)))
+                'reduce_order: shift between sky list and real sky lines = ' + str(int(self.lineobj.lambda_shift)))
 
             if self.lineobj.identify_status < 1:
                 self.found_wavelength = False
                 self.reduction.logger.info('problem with sky line identification')
                 self.reduction.logger.error(
-                        'Could not find sky lines: only doing zeroith order wavelength calibration ')
-
-            elif abs(self.lineobj.lambda_shift) < NirspecFudgeConstants.max_shift_from_theory:
-                self.reduction.logger.info(
-                    'applied the shift = ' + str(self.lineobj.lambda_shift) + ' to aid in sky line identification')
+                        'reduce_order: Could not find sky lines: only doing zeroith order wavelength calibration ')
 
             else:
                 # find the solution between current zeroith order solution and real lambda
@@ -256,4 +257,5 @@ class Reduce_order(object):
 
                     # need to store all the pre-wavelength fixed data to make out files
 
+        self.reduction.logger.error('Finished reducing order = ' + str(self.reduction.order_num))
 
