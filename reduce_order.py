@@ -172,7 +172,8 @@ class Reduce_order(object):
         # # determine sky and continuum locations  ####
         # take a the crosscut of the order and determine place off-peak for sky lines
         peak, crosscut = self.sciorder.find_peak()
-
+        self.sciorder.__setattr__('peak', peak)
+        self.sciorder.__setattr__('crosscut',crosscut)
 
         try:
             ext_range, sky_range_top, sky_range_bot = self.sciorder.setup_extraction_ranges(self.reduction.ext_height,
@@ -181,13 +182,17 @@ class Reduce_order(object):
                                                                                             peak,
                                                                                             self.reduction.order_num,
                                                                                             self.reduction.logger)
+            self.sciorder.__setattr__('ext_range',ext_range)
+            self.sciorder.__setattr__('sky_range_top',sky_range_top)
+            self.sciorder.__setattr__('sky_range_bot',sky_range_bot)
+
         except:
             self.reduction.logger.info('WARNING: could not find correct locations for continuum and sky')
             self.reduction.logger.info('         and therefore not extracting continuum ')
             return
             # ## Horizontal order rectification ###
 
-        # sets self.sciorder.sky_line to use in rectification using sky lines
+        # sky_line to use in rectification using sky lines
         sky_line, sky_line_fit_success = self.sciorder.find_skyline_trace(sky_sigma=self.reduction.sky_sigma,
                                          padding=self.traceobj.padding)
 
@@ -219,7 +224,10 @@ class Reduce_order(object):
             cont, sky, extract_status = self.sciorder.sum_extract(ext_range, sky_range_bot,
                                       sky_range_top)
 
+            self.sciorder.__setattr__('cont',cont)
+
             if extract_status == 0:
+
                 self.reduction.logger.error('could not extract order ' + str(self.reduction.order_num))
                 self.reduction.logger.error('Finished reducing order = ' + str(self.reduction.order_num))
                 return

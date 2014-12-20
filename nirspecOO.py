@@ -235,19 +235,22 @@ class Main():
             # the 2d solution fits the inverse order number better
             order_number_array_stack = 1. / np.hstack(order_number_array)
             matched_sky_line_stack = np.hstack(matched_sky_line)
+            print 'opxs=',orig_pix_x_stack
+            print 'onas=',order_number_array_stack
+            print 'msls=',matched_sky_line_stack
             p1, newoh, dataZZ = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
                                          np.array(order_number_array_stack),
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.5)
-            newoh = twod_lambda_fit.applySolution(p1)
-            print 'newoh=',newoh
+
 
         else:
             newoh = []
         # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
-
-
+            newoh = twod_lambda_fit.applySolution(order_object, p1)
+            print 'newoh=',newoh
+            print 'dataZZ=',dataZZ
             # ## make plots and output FITS files
             self.nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj,
                                                       order_object.traceobj, order_object.flatobj, order_object.sciobj,

@@ -144,8 +144,8 @@ class NirspecBookkeeping(object):
             pl.figure(4, figsize=(15, 1.5))
             pl.title("Order=" + str(sciorder.order_num))
             pl.xlabel("$\AA$")
-        pl.imshow(sciorder.rectified, origin='lower',
-                  extent=[dx_2dfit[0], dx_2dfit[-1], 0, sciorder.rectified.shape[0]], aspect='auto')
+        pl.imshow(sciorder.data, origin='lower',
+                  extent=[dx_2dfit[0], dx_2dfit[-1], 0, sciorder.data.shape[0]], aspect='auto')
         pl.xlabel("$\AA$")
         if allreduceobj.write_plots:
             pl.savefig(
@@ -154,7 +154,7 @@ class NirspecBookkeeping(object):
         if allreduceobj.write_fits:
             fits.writeto(
                 allreduceobj.outpath + allreduceobj.sciname + 'rectified_order' + str(sciorder.order_num) + '.fits',
-                sciorder.rectified, allreduceobj.sciheader, output_verify='warn', clobber=True)
+                sciorder.data, allreduceobj.sciheader, output_verify='warn', clobber=True)
 
         if True:
             if not traceobj.traced_bot:

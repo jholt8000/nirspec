@@ -178,7 +178,7 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     return p1, newoh, dataZZ
 
 
-def applySolution(order_object):
+def applySolution(order_object,p1):
 
     newdx = np.arange(1024)
     newy = 1. / order_object.sciorder.order_num
