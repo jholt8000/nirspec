@@ -13,9 +13,9 @@ import reduce_order
 
 reload(reduce_order)
 
-import nirspec_wavelength_utils
+import wavelength_utils
 
-reload(nirspec_wavelength_utils)
+reload(wavelength_utils)
 import array_manipulate
 
 reload(array_manipulate)

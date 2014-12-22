@@ -1,5 +1,5 @@
 
-import nirspec_wavelength_utils
+import wavelength_utils
 import numpy as np
 import unittest
 import nirspec_test_data
@@ -46,7 +46,7 @@ def test_2d_lambda_fit():
 
 def test_read_oh():
     # do not need dx and, just that low_d is False
-    t1 = nirspec_wavelength_utils.LineId(False, [], [])
+    t1 = wavelength_utils.LineId(False, [], [])
     t1.read_OH()
     if t1.ohx = nirspec_test_data.hardcoded.ohx:
         print 'nirspec_wavelength_utils.read_OH ohx passed'
@@ -60,14 +60,14 @@ def test_read_oh():
 
 def test_gauss_sky():
     # does not need dx, dy, or low_d, perhaps this method belongs elsewhere?
-    t1 = nirspec_wavelength_utils.LineId(False, [], [])
+    t1 = wavelength_utils.LineId(False, [], [])
     ohx=[100,200,220.1, 300]
     ohy=[0.1, 10, 50, 74.3]
     t1.gauss_sky(ohx, ohy, sig=0.2)
     return t1.fake_sky
 
 def test_find_xcorr_shift(ohgs):
-    t1 = nirspec_wavlelength_utils.LineId(False, dx, dy)
+    t1 = wavlelength_utils.LineId(False, dx, dy)
 
 
 def test_identify(self, ohx, ohy):

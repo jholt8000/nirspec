@@ -14,9 +14,9 @@ reload(astro_math)
 import array_manipulate
 
 reload(array_manipulate)
-import nirspec_wavelength_utils
+import wavelength_utils
 
-reload(nirspec_wavelength_utils)
+reload(wavelength_utils)
 
 import trace_order
 
