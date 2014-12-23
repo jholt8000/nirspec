@@ -2,79 +2,108 @@
 import wavelength_utils
 import numpy as np
 import unittest
-import nirspec_test_data
-
-#TODO need to define dx, dy inputs for these tests to work
-
-### nirspec_wavelength_utils tests ###
-def test_2d_lambda_fit():
-    """"""
-    onas= [ 0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,
-  0.02631579,  0.02631579,  0.02702703,  0.02702703,  0.02702703,  0.02702703,
-  0.02702703,  0.02702703,  0.02777778,  0.02777778,  0.02777778,  0.02777778,
-  0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,
-  0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,
-  0.02777778,  0.02777778,  0.02857143,  0.02857143,  0.02857143,  0.02857143,
-  0.02941176,  0.02941176,  0.02941176,  0.02941176,  0.03030303,  0.03030303,
-  0.03030303,  0.03030303]
-    msls= [ 20004.971,  20008.148,  20033.158,  20068.877,  20102.977,  20115.766,
-  20174.889,  20193.02,  20499.357,  20562.953,  20564.143,  20672.668,
-  20728.17,   20729.859,  21033.09,   21053.775,  21061.498,  21062.689,
-  21067.729,  21096.316,  21104.275,  21107.104,  21115.652,  21155.926,
-  21176.387,  21232.354,  21249.48,   21278.219,  21279.893,  21316.18,
-  21319.652,  21325.914,  21636.973,  21710.932,  21802.111,  21873.348,
-  22311.799,  22313.65,   22460.602,  22516.727,  22938.246,  22939.947,
-  22983.535,  22987.475]
-    orig_pix_x_stack= [280, 291, 379, 509, 613, 663, 860, 934, 135, 356, 360, 728, 912, 918,  29,
- 157, 246, 272, 281, 311, 445, 512, 695, 751, 843, 849, 965, 976, 996,  61, 299, 592, 817,
- 192, 198, 657, 829,  48,  54, 190, 202]
-
-    p1 = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
-                                         np.array(order_number_array_stack),
-                                         np.array(matched_sky_line_stack), logger=self.logger,
-                                         lower_len_points=10., sigma_max=0.5)
-
-    # ## all this belongs elsewhere ###
-    newdx = np.arange(1024)
-    newy = 1. / self.order_num
-    newoh = np.ravel(
-        p1[0] + p1[1] * newdx + p1[2] * newdx ** 2 + p1[3] * newy + p1[4] * newdx * newy + p1[5] * (
-        newdx ** 2) * newy)
-
-    pl.plot(newoh,newdx)
+import array_manipulate
+import keck_fits
 
 
-def test_read_oh():
-    # do not need dx and, just that low_d is False
-    t1 = wavelength_utils.LineId(False, [], [])
-    t1.read_OH()
-    if t1.ohx = nirspec_test_data.hardcoded.ohx:
-        print 'nirspec_wavelength_utils.read_OH ohx passed'
-    else:
-        print 'nirspec_wavelength_utils.read_OH ohx failed'
+class Unit_tests(unittest.TestCase):
 
-    if t1.ohy = nirspec_test_data.hardcoded.ohy:
-        print 'nirspec_wavelength_utils.read_OH ohy passed'
-    else:
-        print 'nirspec_wavelength_utils.read_OH ohy failed'
+    def __init__(self, sci_name='NS.20120929.34991.fits', flat_name='NS.20120929.09078.fits'):
+        '''
+         make input objects to unit tests
+        :param sci_name:
+        :param flat_name:
+        :return:
 
-def test_gauss_sky():
-    # does not need dx, dy, or low_d, perhaps this method belongs elsewhere?
-    t1 = wavelength_utils.LineId(False, [], [])
-    ohx=[100,200,220.1, 300]
-    ohy=[0.1, 10, 50, 74.3]
-    t1.gauss_sky(ohx, ohy, sig=0.2)
-    return t1.fake_sky
+        '''
+        self.nb = nirspec_util.NirspecBookkeeping(scifile,
+                                                  outpath='.')
+        self.logger = nb.setup_logger()
 
-def test_find_xcorr_shift(ohgs):
-    t1 = wavlelength_utils.LineId(False, dx, dy)
+        sci, sciheader, sciname = keck_fits.Handle_fits.get_array_and_header(sci_name)
+
+        flat, flatheader, flatname = keck_fits.Handle_fits.get_array_and_header(flat_name)
+
+        # instantiate sciObj and flatObj objects
+        self.sciObj = array_manipulate.SciArray(self.sci)
+        self.flatObj = array_manipulate.FlatArray(self.flat)
+
+        self.reduced_order_object = reduce_order.Reduce_order(self, sciObj, flatObj)
+        self.reduced_order_object.reduce_order()
+
+        #this needs to be writing this array somewhere before the tests are run, otherwise it is testing itself
+        self.setup_initial_cleaned_data = self.sciObj.cosmic()
+
+        self.onas= np.array([ 0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,
+          0.02631579,  0.02631579,  0.02702703,  0.02702703,  0.02702703,  0.02702703,
+          0.02702703,  0.02702703,  0.02777778,  0.02777778,  0.02777778,  0.02777778,
+          0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,
+          0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,  0.02777778,
+          0.02777778,  0.02777778,  0.02857143,  0.02857143,  0.02857143,  0.02857143,
+          0.02941176,  0.02941176,  0.02941176,  0.02941176,  0.03030303,  0.03030303,
+          0.03030303,  0.03030303])
+        self.msls= np.array([ 20004.971,  20008.148,  20033.158,  20068.877,  20102.977,  20115.766,
+          20174.889,  20193.02,  20499.357,  20562.953,  20564.143,  20672.668,
+          20728.17,   20729.859,  21033.09,   21053.775,  21061.498,  21062.689,
+          21067.729,  21096.316,  21104.275,  21107.104,  21115.652,  21155.926,
+          21176.387,  21232.354,  21249.48,   21278.219,  21279.893,  21316.18,
+          21319.652,  21325.914,  21636.973,  21710.932,  21802.111,  21873.348,
+          22311.799,  22313.65,   22460.602,  22516.727,  22938.246,  22939.947,
+          22983.535,  22987.475])
+        self.orig_pix_x_stack= np.array([280, 291, 379, 509, 613, 663, 860, 934, 135, 356, 360, 728, 912, 918,  29,
+         157, 246, 272, 281, 311, 445, 512, 695, 751, 843, 849, 965, 976, 996,  61, 299, 592, 817,
+         192, 198, 657, 829,  48,  54, 190, 202])
+
+        self.newoh=np.array([])
+        self.ohx,self.ohy=([],[])
+        self.fake_sky=[]
+
+    def run_all(self):
+
+        self.assertEqual(self.test_cosmic(), self.setup_initial_cleaned_data)
+        self.assertEqual(self.test_twod_lambda_fit_twodfit(), self.setup_initial_twod_lambda_data)
+        self.assertEqual(self.test_twod_lambda_fit_applySolution(), self.newoh)
+        self.assertEqual(self.test_read_oh(), (self.ohx,self.ohy))
+        self.assertEqual(self.test_gauss_sky(),self.fake_sky)
+        self.assertEqual(self.test_find_xcorr_shift(), self.lambda_shift)
+        self.assertEqual(self.test_identify(), self.id_tuple)
 
 
-def test_identify(self, ohx, ohy):
-    pass
+    def test_cosmic(self):
+            self.sciObj.cosmic()
+            return self.sciObj.data
 
-def test_sanity_check(orig_pix_x, order_number_array, matched_sky_line):
-    pass
+    def test_twod_lambda_fit_twodfit(self):
+        p1, newoh, dataZZ = twod_lambda_fit.twodfit(self.orig_pix_x_stack, self.onas, self.msls, logger=self.logger,
+                                             lower_len_points=10., sigma_max=0.5)
+        return p1
+
+    def test_twod_lambda_fit_applySolution(self):
+        newoh = twod_lambda_fit.applySolution(order_object, p1)
+        return newoh
+
+    def test_read_oh():
+        # do not need dx and, just that low_d is False
+        t1 = wavelength_utils.LineId(False, [], [])
+        ohx, ohy = t1.read_OH()
+        return ohx,ohy
+
+    def test_gauss_sky(self):
+        # does not need dx, dy, or low_d, perhaps this method belongs elsewhere?
+        t1 = wavelength_utils.LineId(self.dx, self.sky, self.low_disp, self.logger)
+        fake_sky = t1.gauss_sky(self.ohx, self.ohy, 0.2)
+        return fake_sky
+
+    def test_find_xcorr_shift(self):
+        t1 = wavlelength_utils.LineId(self.dx, self.sky, self.low_disp, self.logger)
+        lambda_shift = t1.find_xcorr_shift(self.fake_sky)
+        return lambda_shift
+
+    def test_identify(self):
+           id_tuple = self.identify(self.ohx, self.ohy)
+           return id_tuple
+           #      self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
+           #     self.identify_status, self.matchesidx = id_tuple
 
 
 ### nirspec_util.nirspecBookkeeping ###

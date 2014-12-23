@@ -71,10 +71,6 @@ class NirspecBookkeeping(object):
         if allreduceobj.write_plots:
             pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
                        bbox_inches=0)
-        # if write_fits:
-        # pf.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
-        # np.array((sciorder.dx,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
-
 
         pl.figure(2)
         pl.clf()
@@ -96,9 +92,9 @@ class NirspecBookkeeping(object):
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
                            bbox_inches=0)
-        # if write_fits:
-        # pf.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
-        #            np.array((sciorder.dx_2dfit,ex2)),reductionobj.sciheader,output_verify='warn',clobber=True)
+         if allreduceobj.write_fits:
+             fits.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
+                    np.array(sciorder.dx_2dfit), allreduceobj.sciheader, output_verify='warn',clobber=True)
 
         pl.figure(3)
         pl.clf()
@@ -121,9 +117,7 @@ class NirspecBookkeeping(object):
                 allreduceobj.outpath + allreduceobj.sciname + 'crosscut_order' + str(sciorder.order_num) + '.png',
                 bbox_inches=0)
         if allreduceobj.write_fits:
-            # pf.writeto(allreduceobj.outpath+allreduceobj.sciname+'crosscut_order'+str(sciorder.order_num)+
-            #            '.fits',np.array([sciorder.crosscut]),allreduceobj.sciheader,output_verify='warn',
-            #             clobber=True)
+
             c1 = fits.Column(name='cross cut', format='E', array=sciorder.crosscut, bscale=4.4, ascii=True)
             hdu = fits.TableHDU.from_columns([c1])
             hdu.writefits(

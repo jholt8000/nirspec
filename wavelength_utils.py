@@ -31,6 +31,7 @@ class LineId(object):
         self.bigohy=[]
         self.identify_status=0
         self.matchesidx=0
+
         # # find and apply wavelength shift ###
         # Read in the sky line list.
         # skyline list is determined using low_disp and fudge_constants ohlinelist
@@ -43,9 +44,10 @@ class LineId(object):
         # Cross correlate data: self.lineobj.dx and fake_sky
         # with the synthetic sky
         self.lambda_shift = self.find_xcorr_shift(self.fake_sky)
+
         if abs(self.lambda_shift) < nfc.max_shift_from_theory:
             self.dx = self.dx + self.lambda_shift
-            logger.info( 'applied the xcorr shift = ' + str(self.lambda_shift) )
+            logger.info( 'wavelength_utils: applied the xcorr shift = ' + str(self.lambda_shift) )
 
             # match sky lines
             id_tuple = self.identify(self.ohx, self.ohy)
@@ -55,7 +57,7 @@ class LineId(object):
                 self.identify_status, self.matchesidx = id_tuple
 
         if self.identify_status < 1:
-            logger.info('wavelength utils : could not identify lines')
+            logger.info('wavelength utils: could not identify lines')
             logger.info(' Removing xcorr shift ')
             if abs(self.lambda_shift) < nfc.max_shift_from_theory:
                 self.dx = self.dx - self.lambda_shift
@@ -172,6 +174,7 @@ class LineId(object):
             bigohx = np.delete(bigohx, deletelist, None)
         else:
             # there were no sky lines in the table that match theoretical wavelength range
+            logger.info()
             return []
 
         # ## Open, narrow down, clean up sky line list

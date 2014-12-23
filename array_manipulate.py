@@ -49,7 +49,7 @@ class BaseArray(object):
         return self.data * on_order
 
     def interp_shift(self, curve_array, orientation='vertical', pivot='middle'):
-        """ shift array using scipy.interpolate
+        """ shift 2d image array using scipy.interpolate
             this is used to straighten orders using the edge array in curve_array
             usually curve array is found using spectroid
             Parameters:
@@ -117,7 +117,7 @@ class BaseArray(object):
         c.run(self.max_iter)
         self.data = c.cleanarray
 
-    def find_peak(self, order_shifted = True):
+    def find_peak(self, order_shifted = True, use_range=[:]):
         """ this should be in SciArray
         ---------------
         sciorder: sciArray object with data attribute
@@ -141,8 +141,6 @@ class BaseArray(object):
             peak = 0.0
 
         return peak, crosscut
-        #self.peak = peak
-        #self.crosscut = crosscut
 
     def cut_out(self, padding=30., lower=10., upper=30., orientation='landscape'):
         """ cut out orders -
@@ -179,7 +177,6 @@ class BaseArray(object):
         if orientation != 'landscape':
             order_slice = order_slice.transpose()
 
-        #self.order_slice = order_slice
         return order_slice
 
     def mask_order(self, upper_edge, lower_edge):
@@ -206,9 +203,6 @@ class BaseArray(object):
         on_order = belowtop & abovebot
 
         return on_order, off_order
-        # self.on_order = on_order
-        #self.off_order = off_order
-
 
 class SciArray(BaseArray):
     """
@@ -224,25 +218,12 @@ class SciArray(BaseArray):
 
         # transpose the array because spectroid can only read horizontal peaks for now
         npsts = self.data.transpose()
-        # import pylab as pl
-
-        # pl.figure(3)
-        # pl.clf()
-        # pl.imshow(npsts, origin='lower')
 
         # The order cutout has padding on each side. In order to find the sky lines we should 
         # only look at the central section of the cut out array
         npsts = npsts[:, padding + 5:npsts.shape[1] - 5 - padding]
 
-        # pl.figure(4)
-        # pl.clf()
-        # pl.imshow(npsts, origin='lower')
-
         cc = np.sum(npsts[:, 0:5], axis=1)
-        # pl.figure(5)
-        # pl.clf()
-        # pl.plot(cc)
-        # pl.show()
 
         locpeaks = argrelextrema(cc, np.greater)
         locmaxes = np.where(cc[locpeaks[0]] > sky_sigma * cc.mean())
@@ -264,19 +245,14 @@ class SciArray(BaseArray):
         centroid_sky_sum = np.array([])
         fitnumber = 0
 
-        # pl.figure(7)
-        # pl.clf()
         for maxskyloc in maxes:
             if 10 < maxskyloc < 1010:
-                # pl.plot(1,maxskyloc,'r*')
 
                 centroid_sky, badfit = spectroid(npsts, traceWidth=3, backgroundWidth=0, startingLocation=maxskyloc,
                                                  traceMean=True, traceLast=False, traceDelta=0.8)
 
                 if badfit == 9999:
                     continue  # skip this skyline
-
-                # pl.plot(centroid_sky,'c')
 
                 # average up the good ones
                 if badfit < 10:
@@ -292,17 +268,12 @@ class SciArray(BaseArray):
 
         if centroid_sky_sum.any():
             sky_line = centroid_sky_sum / fitnumber
-            # pl.plot(sky_line,'g*')
             sky_line_success = True
         else:
             sky_line = NirspecFudgeConstants.badval
             sky_line_success = False
 
-        #self.sky_line = sky_line
         return sky_line, sky_line_success
-        # pl.figure(13)
-        # pl.clf()
-        # pl.plot(self.sky_line,'g*')
 
     def setup_extraction_ranges(self, ext_height, sky_distance, sky_height,
                                 peak, order, logger):
