@@ -22,7 +22,7 @@ import trace_order
 
 reload(trace_order)
 from fudge_constants import NirspecFudgeConstants
-
+import nirspecOO
 try:
     import numpy as np
 except:
@@ -53,6 +53,7 @@ class Reduce_order(object):
     # ## attributes could be padding and dx as those change throughout ###
 
     def __init__(self, reduction, sciobj, flatobj):
+
         self.reduction = reduction
         self.sciobj = sciobj
         self.flatobj = flatobj
@@ -64,8 +65,13 @@ class Reduce_order(object):
     def reduce_order(self):
 
         # make order-specific extraction bool
-        global sky_line_fit
-        do_extract = self.reduction.do_extract
+        #global sky_line_fit
+
+        assert isinstance(self.reduction, nirspecOO.Main), "Need to instansiate nirspecOO.Main with parameters "
+        assert isinstance(self.sciobj, array_manipulate.SciArray), "need to instansiate array_manipulate"
+
+        #do_extract = self.reduction.do_extract
+        do_extract=True
 
         self.reduction.logger.info('-------Starting on Order ' + str(self.reduction.order_num) + '---------\n \n')
 

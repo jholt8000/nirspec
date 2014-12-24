@@ -107,17 +107,17 @@ class BaseArray(object):
         # self.rectified = rectified
         return rectified
 
-    def cosmic(self):
+    def cosmic(self, max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0):
         """ call LA cosmic routine by Malte Tewes"""
         import cosmics  # LA cosmic routine
 
         reload(cosmics)
-        c = cosmics.cosmicsImage(self.data, sigclip=self.sig_clip, sigfrac=self.sig_frac,
-                                 objlim=self.obj_lim, verbose=False)
-        c.run(self.max_iter)
+        c = cosmics.cosmicsImage(self.data, sigclip=sig_clip, sigfrac=sig_frac,
+                                 objlim=obj_lim, verbose=False)
+        c.run(max_iter)
         self.data = c.cleanarray
 
-    def find_peak(self, order_shifted = True, use_range=[:]):
+    def find_peak(self, order_shifted = True, use_range="[:]"):
         """ this should be in SciArray
         ---------------
         sciorder: sciArray object with data attribute

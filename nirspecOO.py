@@ -176,16 +176,18 @@ class Main():
             sciObj.data -= self.dark_name
             flatObj.data -= self.dark_name
 
-        # inherit self (current cosmic ray reduction) attributes to sciObj and flatObj
-        sciObj.__dict__.update(self.__dict__)
-        flatObj.__dict__.update(self.__dict__)
+        # inherit self (current cosmic ray reduction) attributes to sciObj and flatObj - not a good way to go -JH
+        #sciObj.__dict__.update(self.__dict__)
+        #flatObj.__dict__.update(self.__dict__)
 
         if self.cosmic_clean:
             self.logger.info(str('cosmic ray cleaning using LA Cosmic'))
 
             # cosmic clean sciObj.data and flatObj.data #
-            sciObj.cosmic()
-            flatObj.cosmic()
+            sciObj.cosmic(sigclip=self.sig_clip, sigfrac=self.sig_frac,
+                                 objlim=self.obj_lim, verbose=False)
+            flatObj.cosmic(sigclip=self.sig_clip, sigfrac=self.sig_frac,
+                                 objlim=self.obj_lim, verbose=False)
 
         # initialize variables and lists
         lhs_top = 0

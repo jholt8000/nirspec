@@ -1,10 +1,20 @@
 
 import wavelength_utils
+reload(wavelength_utils)
 import numpy as np
 import unittest
 import array_manipulate
+reload(array_manipulate)
 import keck_fits
-
+import nirspec_util
+reload(nirspec_util)
+import reduce_order
+reload(reduce_order)
+import nirspecOO
+reload(nirspecOO)
+import twod_lambda_fit
+reload(twod_lambda_fit)
+from astropy.io import fits
 
 class Unit_tests(unittest.TestCase):
 
@@ -16,23 +26,22 @@ class Unit_tests(unittest.TestCase):
         :return:
 
         '''
-        self.nb = nirspec_util.NirspecBookkeeping(scifile,
-                                                  outpath='.')
-        self.logger = nb.setup_logger()
+        self.nb = nirspec_util.NirspecBookkeeping(sci_name, outpath='.')
+        self.sci, self.sciheader, self.sciname = keck_fits.Handle_fits.get_array_and_header(sci_name)
 
-        sci, sciheader, sciname = keck_fits.Handle_fits.get_array_and_header(sci_name)
-
-        flat, flatheader, flatname = keck_fits.Handle_fits.get_array_and_header(flat_name)
+        self.flat, self.flatheader, self.flatname = keck_fits.Handle_fits.get_array_and_header(flat_name)
 
         # instantiate sciObj and flatObj objects
         self.sciObj = array_manipulate.SciArray(self.sci)
         self.flatObj = array_manipulate.FlatArray(self.flat)
 
-        self.reduced_order_object = reduce_order.Reduce_order(self, sciObj, flatObj)
+        self.reduction = nirspecOO.Main(sci_name, flat_name)
+
+        self.reduced_order_object = reduce_order.Reduce_order(self.reduction, self.sciObj, self.flatObj)
         self.reduced_order_object.reduce_order()
 
         #this needs to be writing this array somewhere before the tests are run, otherwise it is testing itself
-        self.setup_initial_cleaned_data = self.sciObj.cosmic()
+        self.setup_initial_cleaned_data = fits.getdata('cleaned2.fits')
 
         self.onas= np.array([ 0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,  0.02631579,
           0.02631579,  0.02631579,  0.02702703,  0.02702703,  0.02702703,  0.02702703,
@@ -52,31 +61,55 @@ class Unit_tests(unittest.TestCase):
           22983.535,  22987.475])
         self.orig_pix_x_stack= np.array([280, 291, 379, 509, 613, 663, 860, 934, 135, 356, 360, 728, 912, 918,  29,
          157, 246, 272, 281, 311, 445, 512, 695, 751, 843, 849, 965, 976, 996,  61, 299, 592, 817,
-         192, 198, 657, 829,  48,  54, 190, 202])
+         192, 198, 657, 829,  48,  54, 190, 202, 300, 400, 500])
 
+        self.p1 = np.array([2.17748988e+02,   1.48988109e+00,  -7.04920991e-04,   7.49152726e+05, -4.69689970e+01,   2.78160251e-02])
+
+        print len(self.onas), len(self.msls), len(self.orig_pix_x_stack)
         self.newoh=np.array([])
         self.ohx,self.ohy=([],[])
         self.fake_sky=[]
+        self.id_tuple=[]
 
     def run_all(self):
 
-        self.assertEqual(self.test_cosmic(), self.setup_initial_cleaned_data)
-        self.assertEqual(self.test_twod_lambda_fit_twodfit(), self.setup_initial_twod_lambda_data)
-        self.assertEqual(self.test_twod_lambda_fit_applySolution(), self.newoh)
-        self.assertEqual(self.test_read_oh(), (self.ohx,self.ohy))
-        self.assertEqual(self.test_gauss_sky(),self.fake_sky)
-        self.assertEqual(self.test_find_xcorr_shift(), self.lambda_shift)
-        self.assertEqual(self.test_identify(), self.id_tuple)
+        #np.testing.assert_array_almost_equal(self.test_cosmic(), self.setup_initial_cleaned_data)
 
+        p1_result = self.test_twod_lambda_fit_twodfit()
+        print 'self.p1=',self.p1
+        print 'p1_result = ',p1_result
+        diff1 = p1_result - self.p1
+        print 'diff = ',diff1
+        np.testing.assert_array_almost_equal(p1_result, self.p1)
+
+        #self.assertEqual(self.test_twod_lambda_fit_applySolution(), self.newoh)
+        #self.assertEqual(self.test_read_oh(), (self.ohx,self.ohy))
+        #self.assertEqual(self.test_gauss_sky(),self.fake_sky)
+        #self.assertEqual(self.test_find_xcorr_shift(), self.lambda_shift)
+        #self.assertEqual(self.test_identify(), self.id_tuple)
+
+    def make_cosmic_data(self):
+        '''only run once when making the tests'''
+        cc = self.test_cosmic()
+        hdu = fits.PrimaryHDU(cc)
+        hdu.writeto('cleaned.fits', clobber=True)
+        cc2 = fits.getdata('cleaned.fits')
+        np.testing.assert_array_almost_equal(cc, cc2 )
 
     def test_cosmic(self):
             self.sciObj.cosmic()
             return self.sciObj.data
 
+    def make_twod_lamdba_fit_data(self):
+        ''' only run once when making the tests'''
+        p1 = self.test_twod_lambda_fit_twodfit()
+        print p1
+
     def test_twod_lambda_fit_twodfit(self):
-        p1, newoh, dataZZ = twod_lambda_fit.twodfit(self.orig_pix_x_stack, self.onas, self.msls, logger=self.logger,
+        test_p1, newoh, dataZZ = twod_lambda_fit.twodfit(self.orig_pix_x_stack, self.onas, self.msls, logger=self.reduction.logger,
                                              lower_len_points=10., sigma_max=0.5)
-        return p1
+        print 'test_p1=',test_p1
+        return test_p1
 
     def test_twod_lambda_fit_applySolution(self):
         newoh = twod_lambda_fit.applySolution(order_object, p1)
@@ -153,59 +186,52 @@ def test_setup_logger(self):
         return logger
 
 ### nirspec_util no class
-def test_make_nirspec_final_fits_and_plots(allreduceobj, order_num, sciorder, lineobj, traceobj, flatobj, sciobj):
+#def test_make_nirspec_final_fits_and_plots(allreduceobj, order_num, sciorder, lineobj, traceobj, flatobj, sciobj):
 
 
 ### nirspec_util.NirspecHeader need to init a header
-
-def test_get_data_dict(self):
-    pass
-
-def test_get_theory_order_pos(self, order_num, a_to_mu=True):
-    pass
-
-def test_sanity_check(self, flatheader):
-    pass
-
-def test_get_actual_order_num_pos(edges, theory, threshold):
-    pass
-
-
-#### twod_lambda_fit.py
-def test_twod_lambda_fit.twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
-    pass
-
-### Test repo
-
-### reduce_order
-
-def test_reduce_order(reduction, sciobj, flatobj):
-    pass
-
-
-### trace_order
-def __init__(self, reductionobj, flatobj, sciobj):
-    self.reductionobj = reductionobj
-    self.flatobj = flatobj
-    self.sciobj = sciobj
-    self.trace_success = False
-
-def trace_order(self):
-    pass
-
-def test_fudge_padding(self):
-    pass
-
-def test_smooth_spectroid(self):
-    pass
-
-
-def test_shift_order(self):
-    pass
-
-
-def test_shift_order_back(self):
-    pass
-
-def test_determine_lhs_edge_pos(self, edges, theory_lhs, data_dict):
-    pass
+#
+# def test_get_data_dict(self):
+#     pass
+#
+# def test_get_theory_order_pos(self, order_num, a_to_mu=True):
+#     pass
+#
+# def test_sanity_check(self, flatheader):
+#     pass
+#
+# def test_get_actual_order_num_pos(edges, theory, threshold):
+#     pass
+#
+# ### reduce_order
+#
+# def test_reduce_order(reduction, sciobj, flatobj):
+#     pass
+#
+#
+# ### trace_order
+# def __init__(self, reductionobj, flatobj, sciobj):
+#     self.reductionobj = reductionobj
+#     self.flatobj = flatobj
+#     self.sciobj = sciobj
+#     self.trace_success = False
+#
+# def trace_order(self):
+#     pass
+#
+# def test_fudge_padding(self):
+#     pass
+#
+# def test_smooth_spectroid(self):
+#     pass
+#
+#
+# def test_shift_order(self):
+#     pass
+#
+#
+# def test_shift_order_back(self):
+#     pass
+#
+# def test_determine_lhs_edge_pos(self, edges, theory_lhs, data_dict):
+#     pass

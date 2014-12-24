@@ -92,7 +92,7 @@ class NirspecBookkeeping(object):
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
                            bbox_inches=0)
-         if allreduceobj.write_fits:
+        if allreduceobj.write_fits:
              fits.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
                     np.array(sciorder.dx_2dfit), allreduceobj.sciheader, output_verify='warn',clobber=True)
 
