@@ -63,9 +63,8 @@ class Unit_tests(unittest.TestCase):
          157, 246, 272, 281, 311, 445, 512, 695, 751, 843, 849, 965, 976, 996,  61, 299, 592, 817,
          192, 198, 657, 829,  48,  54, 190, 202, 300, 400, 500])
 
-        self.p1 = np.array([2.17748988e+02,   1.48988109e+00,  -7.04920991e-04,   7.49152726e+05, -4.69689970e+01,   2.78160251e-02])
+        self.p1 = np.array([217.748988342,   1.48988109069,  -0.000704920991226,   749152.726451, -46.9689970409,   .0278160250772])
 
-        print len(self.onas), len(self.msls), len(self.orig_pix_x_stack)
         self.newoh=np.array([])
         self.ohx,self.ohy=([],[])
         self.fake_sky=[]
@@ -76,12 +75,10 @@ class Unit_tests(unittest.TestCase):
         #np.testing.assert_array_almost_equal(self.test_cosmic(), self.setup_initial_cleaned_data)
 
         p1_result = self.test_twod_lambda_fit_twodfit()
-        print 'self.p1=',self.p1
-        print 'p1_result = ',p1_result
-        diff1 = p1_result - self.p1
-        print 'diff = ',diff1
         np.testing.assert_array_almost_equal(p1_result, self.p1)
 
+        fake_sky = self.test_gauss_sky()
+        return fake_sky
         #self.assertEqual(self.test_twod_lambda_fit_applySolution(), self.newoh)
         #self.assertEqual(self.test_read_oh(), (self.ohx,self.ohy))
         #self.assertEqual(self.test_gauss_sky(),self.fake_sky)

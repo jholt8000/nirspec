@@ -25,6 +25,8 @@ class BaseArray(object):
 
     def __init__(self, data):
         self.data = data
+        self.interp_shifted = False
+        self.cosmic_cleaned = False
 
     def __multiply__(self, mult):
         """ multiply array by mult = constant or mult = array """
@@ -105,6 +107,7 @@ class BaseArray(object):
         rectified = np.array(shifted)
         if orientation == 'vertical': rectified = rectified.transpose()
         # self.rectified = rectified
+        self.interp_shifted = True
         return rectified
 
     def cosmic(self, max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0):
@@ -116,6 +119,7 @@ class BaseArray(object):
                                  objlim=obj_lim, verbose=False)
         c.run(max_iter)
         self.data = c.cleanarray
+        self.cosmic_cleaned = True
 
     def find_peak(self, order_shifted = True, use_range="[:]"):
         """ this should be in SciArray
