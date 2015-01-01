@@ -35,7 +35,7 @@ class LineId(object):
         # # find and apply wavelength shift ###
         # Read in the sky line list.
         # skyline list is determined using low_disp and fudge_constants ohlinelist
-        self.ohx, self.ohy = self.read_OH()
+        self.ohx, self.ohy = self.read_OH(datatable='default')
 
         # make a synthetic sky spectrum using line list information with width
         # the size of the data and with sigma = 0.2 (found empirically)
@@ -62,16 +62,19 @@ class LineId(object):
             if abs(self.lambda_shift) < nfc.max_shift_from_theory:
                 self.dx = self.dx - self.lambda_shift
 
-    def read_OH(self):
+    def read_OH(self, data_table='default', ohdatfile=''):
         """
         read sky line list and create lists of x and y locations of theoretical
         oh line strengths and locations
         sets self.ohx, ohy
         """
-        if self.low_disp:
-            ohdatfile = nfc.ohdatfile_low_disp
-        else:
-            ohdatfile = nfc.ohdatfile_high_disp
+        if data_table='default':
+            if self.low_disp :
+                ohdatfile = nfc.ohdatfile_low_disp
+            else :
+                ohdatfile = nfc.ohdatfile_high_disp
+
+        if ohdatfile ==
 
         f = open(ohdatfile)
         x = f.readlines()

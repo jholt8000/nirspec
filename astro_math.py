@@ -19,6 +19,53 @@ except:
     print 'need to update scipy to get argrelextrema'
 
 # collection of array math utilities that do not need self.data as in am classes
+
+
+def fudge_padding(fcn, padding):
+    # if order is very curved, add a bit more padding to
+    # ensure we do not interpolate into the continuum.
+    # ## This should be elsewhere ###
+    if abs(fcn[0] - fcn[-1]) > 20.:
+        padding += 10.
+
+    if abs(fcn[0] - fcn[-1]) > 40.:
+        padding += 10.
+    return padding
+
+def smooth_fcn(fcn):
+    # smooth out
+    # fitting a 3rd order polynomial using least squares
+    new_fcn, foo = astro_math.fit_poly(fcn, xes='default', deg=3)
+    return new_fcn
+
+def shift_order(top_spectroid, avg_spectroid, bot_spectroid, padding):
+
+    if bot_spectroid.any():
+
+        if float(bot_spectroid[0]) > float(padding):
+            # shift the order edge trace to be in the correct place in
+            # order cut out before rectification
+            # centroid top , centroid middle , centroid bottom
+            top_spectroid = top_spectroid - bot_spectroid[0] + padding
+            avg_spectroid = avg_spectroid - bot_spectroid[0] + padding
+            bot_spectroid = bot_spectroid - bot_spectroid[0] + padding
+
+            order_shifted = True
+        else:
+            order_shifted = False
+
+        return top_spectroid, avg_spectroid, bot_spectroid, order_shifted
+
+def shift_order_back(top_spectroid, avg_spectroid, bot_spectroid, padding, order_shifted, lhs_bot):
+    if order_shifted:
+        # remove the padding and start at lhs_bot to show plots in correct place
+        avg_spectroid = avg_spectroid - padding + lhs_bot
+        bot_spectroid = bot_spectroid - padding + lhs_bot
+        top_spectroid = top_spectroid - padding + lhs_bot
+
+    return top_spectroid, avg_spectroid, bot_spectroid
+
+
 def conv_ang_to_mu(dx):
     mu_dx = dx / 10000.
     return mu_dx

@@ -102,7 +102,8 @@ class Main():
                  max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0,
                  ext_height=3, sky_distance=5, write_fits=False,
                  sky_height=5, rawpath='', outpath='', write_plots=False,
-                 sky_sigma=2.25):
+                 sky_sigma=2.25, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
+                 traceLast=False, traceDelta=1.9):
 
         """ Initialize reduction"""
 
@@ -123,11 +124,17 @@ class Main():
         self.sig_clip = sig_clip
         self.sig_frac = sig_frac
         self.obj_lim = obj_lim
+        self.backgroundWidth = backgroundWidth
+        self.traceMean = traceMean
+        self.traceLast = traceLast
+        self.traceDelta = traceDelta
+        self.startingLocation = startingLocation
+        self.traceWidth = traceWidth
 
-        self.sci, self.sciheader, self.sciname = keck_fits.Handle_fits.get_array_and_header(sci_name)
+        self.sci, self.sciheader, self.sciname = keck_fits.get_array_and_header(sci_name)
 
         if flat_name:
-            self.flat, self.flatheader, self.flatname = keck_fits.Handle_fits.get_array_and_header(flat_name)
+            self.flat, self.flatheader, self.flatname = keck_fits.get_array_and_header(flat_name)
 
         else:
             print 'I need a flat to reduce science frame'
@@ -202,10 +209,16 @@ class Main():
         while self.order_num > 0 and lhs_top < 1034:
 
             # ## This is the main reduction of each order ###
-            reduced_order_object = reduce_order.Reduce_order(self, sciObj, flatObj)
+            reduced_order_object = reduce_order.Reduce_order(self.order_num, logger = self.logger,
+                                                             ext_height=self.ext_height, sky_distance=self.sky_distance,
+                                                             sky_height=self.sky_height, sky_sigma=self.sky_sigma,
+                                                             sciobj=sciObj, flatobj=flatObj, sci_data=[], flat_data=[],
+                                                             do_extract=self.do_extract, padding=self.data_dict['padding'],
+                                                             traceWidth=self.traceWidth, backgroundWidth=self.backgroundWidth,
+=                                                            traceMean=self.traceMean, traceLast=False, traceDelta=self.traceDelta )
             reduced_order_object.reduce_order()
 
-            lhs_top = reduced_order_object.traceobj.lhs_top
+            lhs_top = reduced_order_object.lhs_top
 
             if reduced_order_object.lineobj is not None:
                 # ## add the reduced_order_object with all arrays and info about reduction to master tuple

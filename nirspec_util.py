@@ -199,7 +199,8 @@ class NirspecBookkeeping(object):
             i.flush()
             i.close()
 
-    def setup_logger(self):
+    @staticmethod
+    def setup_logger(fitsname, outpath, verbose=False):
         """
         creates logging utility, returns logger object
         """
@@ -210,27 +211,27 @@ class NirspecBookkeeping(object):
             i.flush()
             i.close()
 
-        if '/' in self.fitsname:
-            fitsnameforlog = self.fitsname.split('/')[-1]
+        if '/' in fitsname:
+            fitsnameforlog = fitsname.split('/')[-1]
         else:
-            fitsnameforlog = self.fitsname
-        if os.path.isfile(self.outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '.log'):
-            if os.path.isfile(self.outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '_old.log'):
-                os.remove(self.outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '_old.log')
-            os.rename(self.outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '.log',
-                      self.outpath + 'drp_' + fitsnameforlog.rstrip('.fits') + '_old.log')
+            fitsnameforlog = fitsname
+        if os.path.isfile(outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '.log'):
+            if os.path.isfile(outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '_old.log'):
+                os.remove(outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '_old.log')
+            os.rename(outpath + '/drp_' + fitsnameforlog.rstrip('.fits') + '.log',
+                      outpath + 'drp_' + fitsnameforlog.rstrip('.fits') + '_old.log')
 
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
         if not logger.handlers:
-            fh = logging.FileHandler(filename=self.outpath + 'drp_' + fitsnameforlog.rstrip('.fits') + '.log')
+            fh = logging.FileHandler(filename=outpath + 'drp_' + fitsnameforlog.rstrip('.fits') + '.log')
             fh.setLevel(logging.DEBUG)
             fh.setFormatter(formatter)
             logger.addHandler(fh)
 
-            if self.verbose:
+            if verbose:
                 ch = logging.StreamHandler()
                 ch.setLevel(logging.DEBUG)
                 ch.setFormatter(formatter)
@@ -264,26 +265,26 @@ class NirspecHeader(object):
 
         if 'NIRSPEC-1' in self.filter_name:
             data_dict = {'filt': 1, 'startord': 80, 'padding': 0 * padding_modify, 'threshold': 1000, 'spw': 5.,
-                         'trace_delta': 1.5}
+                         'traceWidth': 1.5, 'order_threshold':1000}
         elif 'NIRSPEC-2' in self.filter_name:
             data_dict = {'filt': 2, 'startord': 70, 'padding': 0 * padding_modify, 'threshold': 3000, 'spw': 5.,
-                         'trace_delta': 1.5}
+                         'traceWidth': 1.5,'order_threshold':1000}
         elif 'NIRSPEC-3' in self.filter_name:
             data_dict = {'filt': 3, 'startord': 67, 'padding': 0 * padding_modify, 'threshold': 10000, 'spw': 3.,
-                         'trace_delta': 1.1}
+                         'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-4' in self.filter_name:
             data_dict = {'filt': 4, 'startord': 61, 'padding': 10 + 5 * padding_modify, 'threshold': 10000, 'spw': 3.,
-                         'trace_delta': 1.1}
+                         'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-5' in self.filter_name:
             data_dict = {'filt': 5, 'startord': 53, 'padding': 10 + 5 * padding_modify, 'threshold': 10000, 'spw': 3.,
-                         'trace_delta': 1.1}
+                         'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-6' in self.filter_name:
-            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'threshold': 10000, 'trace_delta': 1.1}
+            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'threshold': 10000, 'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-7' in self.filter_name:
-            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'threshold': 30000, 'spw': 3., 'trace_delta': 1.1}
+            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'threshold': 30000, 'spw': 3., 'traceWidth': 1.1,'order_threshold':1000}
         else:
             data_dict = {'filt': self.filter_name, 'startord': 9999, 'padding': 9999, 'threshold': 9999, 'spw': 9999,
-                         'trace_delta': 9999}
+                         'traceWidth': 9999,'order_threshold':1000}
 
         if '24' in self.header['slitname']:
             data_dict['order_threshold'] = 50
@@ -294,7 +295,8 @@ class NirspecHeader(object):
 
         return data_dict
 
-    def get_theory_order_pos(self, order, A_to_mu=True):
+
+    def get_theory_order_pos(self, order):
         """
         use grating equation with coefficients empirically found for each
         filter, grating angle, and echelle angle to determine starting
