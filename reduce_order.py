@@ -19,7 +19,7 @@ import wavelength_utils
 reload(wavelength_utils)
 
 import trace_order
-
+import logging
 reload(trace_order)
 from fudge_constants import NirspecFudgeConstants
 import fudge_constants
@@ -38,9 +38,10 @@ class Reduce_order(object):
 
     #reduce each order found
 
-    def __init__(self, order_num, logger = '', ext_height=3, sky_distance=5, sky_height=5, sky_sigma=2.25,
+    def __init__(self, order_num, logger = '', ext_height=3, sky_distance=5, sky_height=5, sky_sigma=2.25, hdr_obj='',
+                 header = '', order_threshold=1000,
                  sciobj='', flatobj='', sci_data=[], flat_data=[], do_extract=True, padding=10,
-                 sky_sigma=2.25, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
+                 traceWidth=10, backgroundWidth=30, traceMean=True,
                  traceLast=False, traceDelta=1.9):
 
         """
@@ -73,7 +74,7 @@ class Reduce_order(object):
             extract?
         :raise AttributeError:
         """
-
+        self.padding = padding
         self.order_num = order_num
         self.do_extract = do_extract
         self.ext_height = ext_height
@@ -85,18 +86,28 @@ class Reduce_order(object):
         self.traceMean = traceMean
         self.traceLast = traceLast
         self.traceDelta = traceDelta
-        self.startingLocation = startingLocation
         self.traceWidth = traceWidth
-
-
+        self.order_threshold = order_threshold
 
         if sciobj == '' and flatobj == '' and data == []:
             print "Need sciobj and flatobj instances of array_manipulate.SciArray OR"
             print " need data numpy array (from astropy.io.fits) "
             raise AttributeError
 
-        if not isinstance(logger, nirspec_util.NirspecBookkeeping.setup_logger):
+        if header == '' and hdr_obj =='':
+            print "Need header object instances of nirspec_util OR"
+            print " need header (from astropy.io.fits) "
+            raise AttributeError
+
+        if not isinstance(hdr_obj, nirspec_util.NirspecHeader):
+            self.hdr_obj = nirspec_util.NirspecHeader(header)
+        else:
+            self.hdr_obj = hdr_obj
+
+        if not isinstance(logger, logging.Logger):
             self.logger = nirspec_util.NirspecBookkeeping.setup_logger('reduction_order_'+order_num+'.log', '.', verbose=False)
+        else:
+            self.logger = logger
 
         if isinstance(sciobj, array_manipulate.SciArray):
             self.sciobj = sciobj
@@ -134,28 +145,33 @@ class Reduce_order(object):
         # lhs_bot_theory,lhs_top_theory, theory_dx, lhs_bot, lhs_top, bot_spectroid,
         # top_spectroid, avg_spectroid, highest_top
 
-
         # location (on lhs of detector) of top of order, bottom of order, and theoretical wavelength array
         # this is a  NIRSPEC centric routine, uses header (filter, echelle and disp angles) and order_num
-        lhs_top_theory, lhs_bot_theory, theory_x = self.nh.get_theory_order_pos(self.order_num)
+        lhs_top_theory, lhs_bot_theory, theory_x = self.hdr_obj.get_theory_order_pos(self.order_num)
 
         self.logger.info('Theory -- left bot = ' + str(int(lhs_bot_theory)) +
                                       ' left top = ' + str(int(lhs_top_theory)))
 
+
         if (lhs_top_theory < self.detector_height + NirspecFudgeConstants.total_chip_padding
             and lhs_bot_theory > -NirspecFudgeConstants.total_chip_padding):
 
-            traceobj = trace_order.Trace_order_utils(lhs_top_theory, lhs_bot_theory, theory_x, lhs_top_theory,
-                                                     lhs_bot_theory, padding=data_dict['padding'], order_threshold=1000, order_num=0,
-                                                     logger='', header_util='', flatobj='', flat_data=[], traceWidth=10,
-                                                     backgroundWidth=30, startingLocation=926, traceMean=True,
+            self.logger.info('Actual -- left bot = ' + str(int(lhs_bot_theory)) +
+                                        ' left top = ' + str(int(lhs_top_theory)))
+
+
+            traceobj = trace_order.Trace(lhs_top_theory, lhs_bot_theory,
+                                                     order_threshold=self.order_threshold, order_num=self.order_num,
+                                                     logger=self.logger, flatobj=self.flatobj, flat_data=[],
+                                                     traceWidth=self.traceWidth,
+                                                     backgroundWidth=30, traceMean=self.traceMean,
                                                      traceLast=False, traceDelta=1.9)
 
-            avg_spectroid, top_spectroid, bot_spectroid, self.lhs_top, self.lhs_bot = traceobj.trace_order
+            avg_spectroid, top_spectroid, bot_spectroid, self.lhs_top, self.lhs_bot = traceobj.trace_order()
 
         else:
             self.logger.info('order: ' + str(self.order_num) + ' not on detector  ')
-            self.lhs_top = self.lhs_top_theory
+            self.lhs_top = lhs_top_theory
             # return to main and skip this order
             return
 
@@ -168,17 +184,23 @@ class Reduce_order(object):
             # ## include padding on the top and bottom to ensure order is on the cutout
             # ## array and to avoid cutting into the science when order is straightened
 
-            padding = astro_math.fudge_padding(avg_spectroid, padding)
+            self.padding = astro_math.fudge_padding(avg_spectroid, self.padding)
+
+            # determine highest point to decide where to cut out the array to isolate order
+            highest_top = max(top_spectroid[0], top_spectroid[-10])
 
             # order_slice that contains only the cutout around the order
-            sci_order_slice = self.sciobj.cut_out(padding=padding, lower=traceobj.lhs_bot,
-                                upper=traceobj.highest_top)
+            sci_order_slice = self.sciobj.cut_out(padding=self.padding, lower=self.lhs_bot,
+                                upper=highest_top)
 
             # order_slice that contains only the cutout around the order
-            flat_order_slice = self.flatobj.cut_out(padding=traceobj.padding, lower=traceobj.lhs_bot,
-                                 upper=traceobj.highest_top)
+            flat_order_slice = self.flatobj.cut_out(padding=self.padding, lower=self.lhs_bot,
+                                 upper=highest_top)
 
-            top_spectroid, avg_spectroid, bot_spectroid, order_shifted = astro_math.shift_order(top_spectroid, avg_spectroid, bot_spectroid)
+            top_spectroid, avg_spectroid, bot_spectroid, order_shifted = astro_math.shift_order(top_spectroid,
+                                                                                                avg_spectroid,
+                                                                                                bot_spectroid,
+                                                                                                self.padding)
 
             # make instances of array manip class using just the order slice
             self.sciorder = array_manipulate.SciArray(sci_order_slice)
@@ -192,7 +214,6 @@ class Reduce_order(object):
             # ## normalize flatorder data ###
 
             # specify the locations of actual order and off order
-            # sets flatorder.on_order and flatorder.off_order
 
             on_order, off_order = flatorder.mask_order(top_spectroid, bot_spectroid)
 
@@ -220,10 +241,11 @@ class Reduce_order(object):
             # illumination on flat order edges
 
             fit_spectroid, foo = astro_math.fit_poly(avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=3)
+
             rectified = self.sciorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
 
             # remove the padding and start at lhs_bot to show plots in correct place
-            astro_math.shift_order_back(top_spectroid, avg_spectroid, bot_spectroid, padding, order_shifted, self.lhs_bot)
+            astro_math.shift_order_back(top_spectroid, avg_spectroid, bot_spectroid, self.padding, order_shifted, self.lhs_bot)
 
             # overwrite data array as rectified array
             self.sciorder.data = rectified
@@ -263,7 +285,7 @@ class Reduce_order(object):
 
         # sky_line to use in rectification using sky lines
         sky_line, sky_line_fit_success = self.sciorder.find_skyline_trace(sky_sigma=self.sky_sigma,
-                                         padding = padding)
+                                         padding = self.padding)
 
         try:
             sky_line_fit, foo = astro_math.fit_poly(sky_line,
@@ -287,7 +309,7 @@ class Reduce_order(object):
 
         # Extract spectrum and subtract sky ##
         # Gain = 4 e- / ADU  and readnoise = 625 e- = 156 ADU
-        if do_extract:
+        if self.do_extract:
 
             # extract
             cont, sky, extract_status = self.sciorder.sum_extract(ext_range, sky_range_bot,
@@ -306,7 +328,7 @@ class Reduce_order(object):
             # ### Wavelength skyline identification ########
             # sets self.lineobj.identify_status
 
-            self.lineobj = nirspec_wavelength_utils.LineId(traceobj.theory_x, sky, self.low_disp,
+            self.lineobj = wavelength_utils.LineId(traceobj.theory_x, sky, False,
                                                            self.logger)
 
             self.logger.info(

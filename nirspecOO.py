@@ -10,24 +10,18 @@ Created on Fri Apr 05 16:08:28 2013
 import numpy as np
 
 import reduce_order
-
 reload(reduce_order)
 
 import wavelength_utils
-
 reload(wavelength_utils)
 import array_manipulate
-
 reload(array_manipulate)
 import keck_fits
-
 reload(keck_fits)
 
 import astro_math
-
 reload(astro_math)
 import nirspec_util
-
 reload(nirspec_util)
 
 import twod_lambda_fit
@@ -102,8 +96,8 @@ class Main():
                  max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0,
                  ext_height=3, sky_distance=5, write_fits=False,
                  sky_height=5, rawpath='', outpath='', write_plots=False,
-                 sky_sigma=2.25, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
-                 traceLast=False, traceDelta=1.9):
+                 sky_sigma=2.25, traceWidth=10, backgroundWidth=30,  traceMean=True,
+                 traceLast=False, traceDelta=1.9, verbose=True):
 
         """ Initialize reduction"""
 
@@ -128,7 +122,6 @@ class Main():
         self.traceMean = traceMean
         self.traceLast = traceLast
         self.traceDelta = traceDelta
-        self.startingLocation = startingLocation
         self.traceWidth = traceWidth
 
         self.sci, self.sciheader, self.sciname = keck_fits.get_array_and_header(sci_name)
@@ -150,7 +143,7 @@ class Main():
 
         self.nb = nirspec_util.NirspecBookkeeping(self.sciname,
                                                   outpath=self.outpath)
-        self.logger = self.nb.setup_logger()
+        self.logger = self.nb.setup_logger(self.sciname, self.outpath, verbose)
 
         if self.sciheader['dispers'] == 'low':
             self.logger.info('low dispersion data')
@@ -191,10 +184,10 @@ class Main():
             self.logger.info(str('cosmic ray cleaning using LA Cosmic'))
 
             # cosmic clean sciObj.data and flatObj.data #
-            sciObj.cosmic(sigclip=self.sig_clip, sigfrac=self.sig_frac,
-                                 objlim=self.obj_lim, verbose=False)
-            flatObj.cosmic(sigclip=self.sig_clip, sigfrac=self.sig_frac,
-                                 objlim=self.obj_lim, verbose=False)
+            sciObj.cosmic(sig_clip=self.sig_clip, sig_frac=self.sig_frac,
+                                 obj_lim=self.obj_lim)
+            flatObj.cosmic(sig_clip=self.sig_clip, sig_frac=self.sig_frac,
+                                 obj_lim=self.obj_lim)
 
         # initialize variables and lists
         lhs_top = 0
@@ -211,11 +204,12 @@ class Main():
             # ## This is the main reduction of each order ###
             reduced_order_object = reduce_order.Reduce_order(self.order_num, logger = self.logger,
                                                              ext_height=self.ext_height, sky_distance=self.sky_distance,
-                                                             sky_height=self.sky_height, sky_sigma=self.sky_sigma,
+                                                             sky_height=self.sky_height, sky_sigma=self.sky_sigma, hdr_obj=self.nh,
                                                              sciobj=sciObj, flatobj=flatObj, sci_data=[], flat_data=[],
+                                                             order_threshold=self.data_dict['order_threshold'],
                                                              do_extract=self.do_extract, padding=self.data_dict['padding'],
                                                              traceWidth=self.traceWidth, backgroundWidth=self.backgroundWidth,
-=                                                            traceMean=self.traceMean, traceLast=False, traceDelta=self.traceDelta )
+                                                             traceMean=self.traceMean, traceLast=False, traceDelta=self.traceDelta)
             reduced_order_object.reduce_order()
 
             lhs_top = reduced_order_object.lhs_top

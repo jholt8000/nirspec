@@ -200,7 +200,7 @@ class NirspecBookkeeping(object):
             i.close()
 
     @staticmethod
-    def setup_logger(fitsname, outpath, verbose=False):
+    def setup_logger(fitsname, outpath, verbose=True):
         """
         creates logging utility, returns logger object
         """
@@ -264,27 +264,27 @@ class NirspecHeader(object):
             padding_modify = 1.0
 
         if 'NIRSPEC-1' in self.filter_name:
-            data_dict = {'filt': 1, 'startord': 80, 'padding': 0 * padding_modify, 'threshold': 1000, 'spw': 5.,
+            data_dict = {'filt': 1, 'startord': 80, 'padding': 0 * padding_modify, 'order_sigma': 1000, 'spw': 5.,
                          'traceWidth': 1.5, 'order_threshold':1000}
         elif 'NIRSPEC-2' in self.filter_name:
-            data_dict = {'filt': 2, 'startord': 70, 'padding': 0 * padding_modify, 'threshold': 3000, 'spw': 5.,
+            data_dict = {'filt': 2, 'startord': 70, 'padding': 0 * padding_modify, 'order_sigma': 3000, 'spw': 5.,
                          'traceWidth': 1.5,'order_threshold':1000}
         elif 'NIRSPEC-3' in self.filter_name:
-            data_dict = {'filt': 3, 'startord': 67, 'padding': 0 * padding_modify, 'threshold': 10000, 'spw': 3.,
+            data_dict = {'filt': 3, 'startord': 67, 'padding': 0 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
                          'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-4' in self.filter_name:
-            data_dict = {'filt': 4, 'startord': 61, 'padding': 10 + 5 * padding_modify, 'threshold': 10000, 'spw': 3.,
+            data_dict = {'filt': 4, 'startord': 61, 'padding': 10 + 5 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
                          'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-5' in self.filter_name:
-            data_dict = {'filt': 5, 'startord': 53, 'padding': 10 + 5 * padding_modify, 'threshold': 10000, 'spw': 3.,
+            data_dict = {'filt': 5, 'startord': 53, 'padding': 10 + 5 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
                          'traceWidth': 1.1,'order_threshold':1000}
         elif 'NIRSPEC-6' in self.filter_name:
-            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'threshold': 10000, 'traceWidth': 1.1,'order_threshold':1000}
+            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'threshold': 10000, 'traceWidth': 1.1,'order_sigma':1000}
         elif 'NIRSPEC-7' in self.filter_name:
-            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'threshold': 30000, 'spw': 3., 'traceWidth': 1.1,'order_threshold':1000}
+            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'threshold': 30000, 'spw': 3., 'traceWidth': 1.1,'order_sigma':1000}
         else:
             data_dict = {'filt': self.filter_name, 'startord': 9999, 'padding': 9999, 'threshold': 9999, 'spw': 9999,
-                         'traceWidth': 9999,'order_threshold':1000}
+                         'traceWidth': 9999,'order_sigma':1000}
 
         if '24' in self.header['slitname']:
             data_dict['order_threshold'] = 50
@@ -359,10 +359,6 @@ class NirspecHeader(object):
 
         x1 = np.arange(1024.)
 
-        if A_to_mu:
-            multiplier = 1 / 10000.
-        else:
-            multiplier = 1.
 
         WL50 = (852800. * np.sin(np.radians(self.header['echlpos'])) -
                 24.13 * (512 - x1) * np.cos(np.radians(self.header['echlpos']))) / order
@@ -459,16 +455,6 @@ class NirspecHeader(object):
         peaks = np.where(magcrosscutatextrema > threshold)
 
         actualpeaks = extrema[peaks[0]]
-        # print 'magcrosscut[extrema]=',magcrosscut[extrema]
-        # print 'peaks = ',peaks
-        # print 'actual peaks=',actualpeaks
-        # pl.figure(13)
-        # pl.clf()
-
-        # pl.plot(magcrosscut)
-        # pl.plot(extrema,magcrosscutatextrema,'bx')
-        # pl.plot(actualpeaks,magcrosscut[actualpeaks],'r*')
-        # pl.show()
 
         if actualpeaks.any():
             actual = min((abs(theory - i), i) for i in actualpeaks)[1]

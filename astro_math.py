@@ -20,7 +20,6 @@ except:
 
 # collection of array math utilities that do not need self.data as in am classes
 
-
 def fudge_padding(fcn, padding):
     # if order is very curved, add a bit more padding to
     # ensure we do not interpolate into the continuum.
@@ -31,12 +30,6 @@ def fudge_padding(fcn, padding):
     if abs(fcn[0] - fcn[-1]) > 40.:
         padding += 10.
     return padding
-
-def smooth_fcn(fcn):
-    # smooth out
-    # fitting a 3rd order polynomial using least squares
-    new_fcn, foo = astro_math.fit_poly(fcn, xes='default', deg=3)
-    return new_fcn
 
 def shift_order(top_spectroid, avg_spectroid, bot_spectroid, padding):
 

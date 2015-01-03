@@ -35,14 +35,22 @@ class LineId(object):
         # # find and apply wavelength shift ###
         # Read in the sky line list.
         # skyline list is determined using low_disp and fudge_constants ohlinelist
-        self.ohx, self.ohy = self.read_OH(datatable='default')
+        self.ohx, self.ohy = self.read_OH(data_table='default')
 
         # make a synthetic sky spectrum using line list information with width
         # the size of the data and with sigma = 0.2 (found empirically)
         self.fake_sky = self.gauss_sky(self.ohx, self.ohy, 0.2)
 
-        # Cross correlate data: self.lineobj.dx and fake_sky
+        print 'fake_sky =',self.fake_sky
+        print 'theory dx = ',self.dx
+        # Cross correlate data: self.dx and fake_sky
         # with the synthetic sky
+        import pylab as pl
+        pl.clf()
+        pl.plot(self.dx)
+        pl.plot(self.fake_sky)
+        pl.show()
+
         self.lambda_shift = self.find_xcorr_shift(self.fake_sky)
 
         if abs(self.lambda_shift) < nfc.max_shift_from_theory:
@@ -68,13 +76,12 @@ class LineId(object):
         oh line strengths and locations
         sets self.ohx, ohy
         """
-        if data_table='default':
+        if data_table=='default':
             if self.low_disp :
                 ohdatfile = nfc.ohdatfile_low_disp
             else :
                 ohdatfile = nfc.ohdatfile_high_disp
 
-        if ohdatfile ==
 
         f = open(ohdatfile)
         x = f.readlines()
