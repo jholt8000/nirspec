@@ -26,7 +26,7 @@ class LineId(object):
         self.dx = dx
         self.sky = sky
         self.matchesdx=[]
-        self.matchexohy=[]
+        self.matchexohy=[] 
         self.bigohx=[]
         self.bigohy=[]
         self.identify_status=0
