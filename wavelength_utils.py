@@ -11,6 +11,7 @@ reload(spectroid)
 # from numpy import fft
 # from scipy import optimize
 import astro_math
+import logging
 from fudge_constants import NirspecFudgeConstants as nfc
 
 try:
@@ -20,17 +21,23 @@ except:
 
 
 class LineId(object):
-    def __init__(self, dx, sky, low_disp, logger):
+    def __init__(self, theory_x, sky, low_disp, logger):
 
         self.low_disp = low_disp
-        self.dx = dx
+        self.theory_x = theory_x
         self.sky = sky
         self.matchesdx=[]
-        self.matchexohy=[] 
+        self.matchexohy=[]
         self.bigohx=[]
         self.bigohy=[]
         self.identify_status=0
         self.matchesidx=0
+
+        if not isinstance(logger, logging.Logger):
+            self.logger = nirspec_util.NirspecBookkeeping.setup_logger('reduction_order_'+order_num+'.log', '.', verbose=False)
+        else:
+            self.logger = logger
+
 
         # # find and apply wavelength shift ###
         # Read in the sky line list.
@@ -41,21 +48,13 @@ class LineId(object):
         # the size of the data and with sigma = 0.2 (found empirically)
         self.fake_sky = self.gauss_sky(self.ohx, self.ohy, 0.2)
 
-        print 'fake_sky =',self.fake_sky
-        print 'theory dx = ',self.dx
-        # Cross correlate data: self.dx and fake_sky
+        # Cross correlate data: self.theory_x and fake_sky
         # with the synthetic sky
-        import pylab as pl
-        pl.clf()
-        pl.plot(self.dx)
-        pl.plot(self.fake_sky)
-        pl.show()
-
         self.lambda_shift = self.find_xcorr_shift(self.fake_sky)
 
         if abs(self.lambda_shift) < nfc.max_shift_from_theory:
-            self.dx = self.dx + self.lambda_shift
-            logger.info( 'wavelength_utils: applied the xcorr shift = ' + str(self.lambda_shift) )
+            self.theory_x = self.theory_x + self.lambda_shift
+            self.logger.info( 'wavelength_utils: applied the xcorr shift = ' + str(self.lambda_shift) )
 
             # match sky lines
             id_tuple = self.identify(self.ohx, self.ohy)
@@ -64,11 +63,12 @@ class LineId(object):
                 self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
                 self.identify_status, self.matchesidx = id_tuple
 
+
         if self.identify_status < 1:
-            logger.info('wavelength utils: could not identify lines')
-            logger.info(' Removing xcorr shift ')
+            self.logger.info('wavelength utils: could not identify lines')
+            self.logger.info(' Removing xcorr shift ')
             if abs(self.lambda_shift) < nfc.max_shift_from_theory:
-                self.dx = self.dx - self.lambda_shift
+                self.theory_x = self.theory_x - self.lambda_shift
 
     def read_OH(self, data_table='default', ohdatfile=''):
         """
@@ -120,7 +120,7 @@ class LineId(object):
         all_g = y[0]
         for i in np.arange(0, x.size):
             if y[i] > 0.01:
-                g = y[i] * np.exp(-(self.dx - x[i]) ** 2 / (2. * sig ** 2))
+                g = y[i] * np.exp(-(self.theory_x - x[i]) ** 2 / (2. * sig ** 2))
                 all_g = all_g + g
 
         #self.fake_sky = all_g
@@ -130,7 +130,7 @@ class LineId(object):
         """ find shift between synthetic sky spectrum and real sky spectrum"""
         self.sky = self.sky - self.sky.mean()
 
-        ohg = np.array([self.dx, ohgs])  # ohg is a synthetic spectrum of gaussians
+        ohg = np.array([self.theory_x, ohgs])  # ohg is a synthetic spectrum of gaussians
         # at skylines in list
 
         xcorrshift = astro_math.arg_max_corr(ohg[1], self.sky)
@@ -156,15 +156,15 @@ class LineId(object):
         """
         self.identify_status = 0
         debug = False
-        dx = np.array(self.dx)
+        theory_x = np.array(self.theory_x)
 
-        # if dx.min() < 20500:
+        # if theory_x.min() < 20500:
         dy = np.array(self.sky)
 
         # ## Open, narrow down, and clean up line list ###
         # only look at the part of sky line list that is around the theory locations
-        locohx = np.intersect1d(np.where(ohx < dx[-1] + 20)[0],
-                                np.where(ohx > dx[0] - 20)[0])
+        locohx = np.intersect1d(np.where(ohx < theory_x[-1] + 20)[0],
+                                np.where(ohx > theory_x[0] - 20)[0])
 
         ohxsized = np.array(ohx[locohx[0]:locohx[-1]])
         ohysized = np.array(ohy[locohx[0]:locohx[-1]])
@@ -184,13 +184,13 @@ class LineId(object):
             bigohx = np.delete(bigohx, deletelist, None)
         else:
             # there were no sky lines in the table that match theoretical wavelength range
-            logger.info()
+            self.logger.info('Could not find sky lines that match theoretical wavelength range')
             return []
 
         # ## Open, narrow down, clean up sky line list
         # look for relative maxes in dy (real sky line peak values)
         if argrelextrema(dy, np.greater)[0].any():
-            relx = dx[argrelextrema(dy, np.greater)[0]]
+            relx = theory_x[argrelextrema(dy, np.greater)[0]]
             rely = dy[argrelextrema(dy, np.greater)[0]]
             idx1 = argrelextrema(dy, np.greater)[0]
 
@@ -383,13 +383,7 @@ class LineId(object):
             matchesohx = matchesohx[oh_sort_indices]
 
             return [matchesdx, matchesohx, matchesohy, bigohx, bigohy, 1, matchesidx]
-            #self.matchesdx = matchesdx
-            #self.matchesohx = matchesohx
-            #self.matchesohy = matchesohy
-            #self.bigohx = bigohx
-            #self.bigohy = bigohy
-            #self.identify_status = 1
-            #self.matchesidx = matchesidx
+
 
 
 def sanity_check(orig_pix_x, order_number_array, matched_sky_line):

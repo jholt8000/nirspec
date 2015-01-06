@@ -136,11 +136,8 @@ class BaseArray(object):
             crosscut = self.data[:30].sum(axis=1)
 
         if crosscut.any():
-
             peak = np.argmax(crosscut)
-            print 'peak here = ',peak
             location_of_peak = crosscut[peak]
-            print location_of_peak
         else:
             peak = 0.0
 

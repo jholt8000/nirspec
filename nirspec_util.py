@@ -34,7 +34,7 @@ class NirspecBookkeeping(object):
         self.verbose = verbose
 
     @staticmethod
-    def make_nirspec_final_FITS_and_plots(allreduceobj, sciorder, lineobj, traceobj, flatobj, sciobj, dx_2dfit):
+    def make_nirspec_final_FITS_and_plots(allreduceobj, order_obj, sciorder, lineobj, flatobj, sciobj, dx_2dfit):
         """
         Creates final reduction outputs
 
@@ -46,7 +46,7 @@ class NirspecBookkeeping(object):
             todo
         lineobj: object
             todo
-        traceobj: object
+        allreduceobj: object
             todo
         flatobj: object
             todo
@@ -58,7 +58,7 @@ class NirspecBookkeeping(object):
         pl.figure(1)
         pl.clf()
         pl.title("Order=" + str(sciorder.order_num))
-        pl.plot(sciorder.dx, lineobj.sky, 'b', label='original theory sky')
+        pl.plot(lineobj.theory_x, lineobj.sky, 'b', label='original theory sky')
         if len(lineobj.bigohx) > 0:
             for i in np.arange(0, len(lineobj.matchesohx)):
                 pl.text(lineobj.matchesohx[i], lineobj.sky.max() + 100, str(lineobj.matchesohx[i]),
@@ -75,7 +75,6 @@ class NirspecBookkeeping(object):
         pl.figure(2)
         pl.clf()
         pl.title("Order=" + str(sciorder.order_num))
-        print 'dx_2dfit leng = ',len(dx_2dfit),' sky len=',len(lineobj.sky)
         if len(dx_2dfit) > 0:
             pl.plot(dx_2dfit, lineobj.sky, 'b', label='sky after 2dfit')
             if len(lineobj.bigohx) > 0:
@@ -94,7 +93,7 @@ class NirspecBookkeeping(object):
                            bbox_inches=0)
         if allreduceobj.write_fits:
              fits.writeto(outpath+sciname+'extracted_allreduceobj.order_num'+str(sciorder.order_num)+'.fits',
-                    np.array(sciorder.dx_2dfit), allreduceobj.sciheader, output_verify='warn',clobber=True)
+                    np.array(dx_2dfit), allreduceobj.sciheader, output_verify='warn',clobber=True)
 
         pl.figure(3)
         pl.clf()
@@ -151,21 +150,21 @@ class NirspecBookkeeping(object):
                 sciorder.data, allreduceobj.sciheader, output_verify='warn', clobber=True)
 
         if True:
-            if not traceobj.traced_bot:
-                traceobj.bot_spectroid = 0
-            if not traceobj.traced_top:
-                traceobj.top_spectroid = 0
+            #if not allreduceobj.traced_bot:
+            #    order_obj.bot_spectroid = 0
+            #if not allreduceobj.traced_top:
+            #    order_obj.top_spectroid = 0
 
             pl.figure(18)
             pl.clf()
             pl.imshow(flatobj.data, origin='lower')
-            pl.plot(10, traceobj.lhs_bot, 'c*')
-            pl.plot(10, traceobj.lhs_top, 'g*')
-            pl.plot(10, traceobj.lhs_top_theory, 'r+')
-            pl.plot(10, traceobj.lhs_bot_theory, 'r+')
-            pl.plot(traceobj.avg_spectroid, 'k', lw=2)
-            pl.plot(traceobj.top_spectroid, 'g', lw=2)
-            pl.plot(traceobj.bot_spectroid, 'g', lw=2)
+            pl.plot(10, order_obj.lhs_bot, 'c*')
+            pl.plot(10, order_obj.lhs_top, 'g*')
+            pl.plot(10, order_obj.lhs_top_theory, 'r+')
+            pl.plot(10, order_obj.lhs_bot_theory, 'r+')
+            pl.plot(order_obj.avg_spectroid, 'k', lw=2)
+            pl.plot(order_obj.top_spectroid, 'g', lw=2)
+            pl.plot(order_obj.bot_spectroid, 'g', lw=2)
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'allflat' + str(sciorder.order_num) + '.png',
                            bbox_inches=0)
@@ -173,13 +172,15 @@ class NirspecBookkeeping(object):
             pl.figure(19)
             pl.clf()
             pl.imshow(sciobj.data, origin='lower')
-            pl.plot(10, traceobj.lhs_bot, 'c*')
-            pl.plot(10, traceobj.lhs_top, 'g*')
-            pl.plot(10, traceobj.lhs_top_theory, 'r+')
-            pl.plot(10, traceobj.lhs_bot_theory, 'r+')
+            pl.plot(10, order_obj.lhs_bot, 'c*')
+            pl.plot(10, order_obj.lhs_top, 'g*')
+            pl.plot(order_obj.avg_spectroid, 'k', lw=2)
+
+            pl.plot(10, order_obj.lhs_top_theory, 'r+')
+            pl.plot(10, order_obj.lhs_bot_theory, 'r+')
             # pl.plot(cm,'k')
-            pl.plot(traceobj.top_spectroid, 'g')
-            pl.plot(traceobj.bot_spectroid, 'g')
+            pl.plot(order_obj.top_spectroid, 'g')
+            pl.plot(order_obj.bot_spectroid, 'g')
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'allsci' + str(sciorder.order_num) + '.png',
                            bbox_inches=0)

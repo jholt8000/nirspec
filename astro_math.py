@@ -50,6 +50,7 @@ def shift_order(top_spectroid, avg_spectroid, bot_spectroid, padding):
         return top_spectroid, avg_spectroid, bot_spectroid, order_shifted
 
 def shift_order_back(top_spectroid, avg_spectroid, bot_spectroid, padding, order_shifted, lhs_bot):
+    print 'order_shifted=',order_shifted
     if order_shifted:
         # remove the padding and start at lhs_bot to show plots in correct place
         avg_spectroid = avg_spectroid - padding + lhs_bot
@@ -57,7 +58,6 @@ def shift_order_back(top_spectroid, avg_spectroid, bot_spectroid, padding, order
         top_spectroid = top_spectroid - padding + lhs_bot
 
     return top_spectroid, avg_spectroid, bot_spectroid
-
 
 def conv_ang_to_mu(dx):
     mu_dx = dx / 10000.

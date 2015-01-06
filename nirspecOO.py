@@ -250,11 +250,10 @@ class Main():
         # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
             newoh = twod_lambda_fit.applySolution(order_object, p1)
-            print 'newoh=',newoh
-            print 'dataZZ=',dataZZ
+
             # ## make plots and output FITS files
-            self.nb.make_nirspec_final_FITS_and_plots(self, order_object.sciorder, order_object.lineobj,
-                                                      order_object.traceobj, order_object.flatobj, order_object.sciobj,
+            self.nb.make_nirspec_final_FITS_and_plots(self, order_object, order_object.sciorder, order_object.lineobj,
+                                                     order_object.flatobj, order_object.sciobj,
                                                       newoh)
 
         self.logger.info('Finished quicklook reduction for science file ' + self.sciname)

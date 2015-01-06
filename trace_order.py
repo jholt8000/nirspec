@@ -74,12 +74,10 @@ class Trace(object):
         self.trace_success = False
         self.lhs_bot_theory = lhs_bot_theory
         self.lhs_top_theory = lhs_top_theory
-        self.theory_x = []
-
 
     def trace_order(self):
         ''' finds actual edge positions using lhs_top_theory and lhs_bot_theory as starting points
-            runs spectroid on those peaks, theory_x is theoretical wavelength array '''
+            runs spectroid on those peaks'''
         # this should be returning parameters
 
         lhs_top = self.determine_lhs_edge_pos(self.flatobj.tops, self.lhs_top_theory)
