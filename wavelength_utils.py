@@ -14,10 +14,10 @@ import astro_math
 import logging
 from fudge_constants import NirspecFudgeConstants as nfc
 
-try:
-    from scipy.signal import argrelextrema
-except:
-    print 'need to update scipy to get argrelextrema'
+#try:
+from scipy.signal import argrelextrema
+#except:
+#    print 'need to update scipy to get argrelextrema'
 
 
 class LineId(object):
@@ -59,6 +59,7 @@ class LineId(object):
             # match sky lines
             id_tuple = self.identify(self.ohx, self.ohy)
 
+            print 'id_tuple=',id_tuple
             if len(id_tuple) > 0:
                 self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
                 self.identify_status, self.matchesidx = id_tuple
@@ -83,7 +84,13 @@ class LineId(object):
                 ohdatfile = nfc.ohdatfile_high_disp
 
 
-        f = open(ohdatfile)
+        try:
+            f = open(ohdatfile)
+        except:
+            self.logger.info('cannot open file '+ohdatfile)
+            self.logger.info('cannot further wavelength calibrate data')
+            return [],[]
+
         x = f.readlines()
         linesx = []
         linesy = []
@@ -200,7 +207,8 @@ class LineId(object):
             bigidx = idx1[np.where(rely > nfc.sky_threshold * rely.mean())]
 
         else:
-            # couldn't find any relative maxes in sky 
+            # couldn't find any relative maxes in sky
+            self.logger.info('could not find any relative maxes in the sky')
             return []
 
         deletelist = []
@@ -383,7 +391,6 @@ class LineId(object):
             matchesohx = matchesohx[oh_sort_indices]
 
             return [matchesdx, matchesohx, matchesohy, bigohx, bigohy, 1, matchesidx]
-
 
 
 def sanity_check(orig_pix_x, order_number_array, matched_sky_line):

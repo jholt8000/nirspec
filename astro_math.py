@@ -8,15 +8,9 @@ import itertools
 
 import numpy as np
 from numpy import fft
-import scipy as sp
 from scipy import optimize
 
 from astropy.io import fits
-
-try:
-    from scipy.signal import argrelextrema
-except:
-    print 'need to update scipy to get argrelextrema'
 
 # collection of array math utilities that do not need self.data as in am classes
 
@@ -75,7 +69,8 @@ def median_comb(cslist):
     """
     data_array = []
     for name in cslist:
-        data = fits.Handle_fits.ensure_array(name)
+        if isinstance(name, str):
+            data = fits.getdata(name)
         data_array.append(data)
 
     # images is a comma separated list of files to be median combined
@@ -120,24 +115,77 @@ def arg_max_corr(a, b):
 
     return max_arg
 
+def smooth(x,window_len=11,window='hanning'):
+   """smooth the data using a window with requested size.
+
+    This method is based on the convolution of a scaled window with the signal.
+    The signal is prepared by introducing reflected copies of the signal
+    (with the window size) in both ends so that transient parts are minimized
+    in the begining and end part of the output signal.
+
+   input:
+       x: the input signal
+       window_len: the dimension of the smoothing window; should be an odd integer
+       window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+         flat window will produce a moving average smoothing.
+
+   output:
+       the smoothed signal
+
+   example:
+
+   t=linspace(-2,2,0.1)
+   x=sin(t)+randn(len(t))*0.1
+   y=smooth(x)
+
+   see also:
+
+   np.hanning, np.hamming, np.bartlett, np.blackman, np.convolve
+   scipy.signal.lfilter
+
+   TODO: the window parameter could be the window itself if an array instead of a string
+   NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
+   """
+
+   if x.ndim != 1:
+       raise ValueError, "smooth only accepts 1 dimension arrays."
+
+   if x.size < window_len:
+       raise ValueError, "Input vector needs to be bigger than window size."
+
+
+   if window_len<3:
+       return x
+
+
+   if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+       raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+
+
+   s=np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+   #print(len(s))
+   if window == 'flat': #moving average
+       w=np.ones(window_len,'d')
+   else:
+       w=eval('np.'+window+'(window_len)')
+
+   y=np.convolve(w/w.sum(),s,mode='valid')
+   return y
+
 def fit_poly(cm, xes='default', deg=4):
     """
     fit a polynomial of degree=degree to array cm (usually output from spectroid)
     
     """
+    #cmfit=[]
     p0 = np.polyfit(np.arange(len(cm) - 10), cm[:-10], deg=deg)  # end always drops off
+
     if xes == 'default':
         xes = np.arange(len(cm))
-    if deg == 4:
-        cmfit = p0[0] * xes ** 4 + p0[1] * xes ** 3 + p0[2] * xes ** 2 + p0[3] * xes + p0[4]
-    elif deg == 3:
-        cmfit = p0[0] * xes ** 3 + p0[1] * xes ** 2 + p0[2] * xes + p0[3]
-    elif deg == 2:
-        cmfit = p0[0] * xes ** 2 + p0[1] * xes + p0[2]
-    elif deg == 1:
-        cmfit = p0[0] * xes + p0[1]
-    else:
-        return p0
+
+    cmfit = np.polyval(p0,xes)
+    print 'cmfit=',cmfit
+
     return cmfit, p0
 
 

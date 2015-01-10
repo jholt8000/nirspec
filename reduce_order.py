@@ -22,8 +22,7 @@ import trace_order
 import logging
 reload(trace_order)
 from fudge_constants import NirspecFudgeConstants
-import fudge_constants
-import nirspecOO
+
 try:
     import numpy as np
 except:
@@ -38,10 +37,10 @@ class Reduce_order(object):
 
     #reduce each order found
 
-    def __init__(self, order_num, logger = '', ext_height=3, sky_distance=5, sky_height=5, sky_sigma=2.25, hdr_obj='',
-                 header = '', order_threshold=1000,
-                 sciobj='', flatobj='', sci_data=[], flat_data=[], do_extract=True, padding=10,
-                 traceWidth=10, backgroundWidth=30, traceMean=True,
+    def __init__(self, order_num, logger = '', ext_height=3, sky_distance=5, sky_height=5, sky_sigma=2.25, hdr_obj='',\
+                 header = '', order_threshold=1000,\
+                 sciobj='', flatobj='', sci_data=[], flat_data=[], do_extract=True, padding=10,\
+                 traceWidth=10, backgroundWidth=30, traceMean=True,\
                  traceLast=False, traceDelta=1.9):
 
         """
@@ -218,7 +217,7 @@ class Reduce_order(object):
             # sets flatorder.normalized and flatorder.flat_mean
 
             #try:
-            if True:
+            try:
                 normalized_flat, flat_mean = flatorder.normalize(on_order, off_order, mask=True, instr="NIRSPEC")
 
                 self.logger.info('flatfielding science')
@@ -226,33 +225,12 @@ class Reduce_order(object):
                 # sets self.sciorder.masked
                 masked = self.sciorder.mask_off_order(on_order)
 
-                import pylab as pl
-                pl.figure(1)
-                pl.clf()
-                pl.imshow(normalized_flat, origin='lower')
-                pl.figure(2)
-                pl.clf()
-                pl.imshow(on_order, origin='lower')
-                pl.figure(3)
-                pl.clf()
-                pl.imshow(off_order, origin='lower')
-                pl.figure(4)
-                pl.clf()
-                pl.imshow(self.sciorder.data, origin='lower')
-                pl.figure(5)
-                pl.clf()
-                pl.imshow(flatorder.data, origin='lower')
-
                 # Where is this flat corrected science array used? should norm_data be data?
                 #self.sciorder.flat_corrected_data = self.sciorder.data / normalized_flat
                 self.sciorder.data = self.sciorder.data / normalized_flat
 
-                pl.figure(6)
-                pl.clf()
-                pl.imshow(self.sciorder.data, origin='lower')
 
-
-            #except:
+            except:
                 self.logger.info('could not flatfield')
 
             # rectify the order slice, sets self.sciorder.rectified
@@ -260,14 +238,30 @@ class Reduce_order(object):
             # fit a 3d poly to center-of-mass fit to smooth interpolation shift and get rid of any bumps due to uneven
             # illumination on flat order edges
 
-            fit_spectroid, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=3)
+            fit_spectroid, foo = astro_math.fit_poly(self.avg_spectroid[0:-100], xes=np.arange(self.sciorder.data.shape[1]), deg=2)
+            fit_spectroid7, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=7)
 
-            rectified = self.sciorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
+            #self.avg_spectroid, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=20)
+            smoothedh = astro_math.smooth(self.avg_spectroid, window_len=11, window='hanning')
+            smoothedf = astro_math.smooth(self.avg_spectroid, window_len=11, window='flat')
+            smoothedham = astro_math.smooth(self.avg_spectroid, window_len=11, window='hamming')
+            smoothedbm = astro_math.smooth(self.avg_spectroid, window_len=11, window='blackman')
 
-            pl.figure(7)
+            #self.avg_spectroid, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=3)
+            import pylab as pl
+            pl.figure(1)
             pl.clf()
-            pl.imshow(rectified, origin='lower')
-            pl.show()
+            pl.plot(self.avg_spectroid,'b')
+            pl.plot(fit_spectroid,'r')
+            pl.plot(fit_spectroid7,'g')
+            pl.plot(smoothedh,'k-')
+            pl.plot(smoothedbm, 'b-')
+            pl.plot(smoothedf,'r-')
+            pl.plot(smoothedham,'g-')
+
+            print len(self.avg_spectroid), len(fit_spectroid7), len(smoothedh)
+            rectified = self.sciorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
+            rectified_flat = flatorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
 
             # remove the padding and start at lhs_bot to show plots in correct place
 

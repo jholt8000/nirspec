@@ -25,7 +25,6 @@ import nirspec_util
 reload(nirspec_util)
 
 import twod_lambda_fit
-
 reload(twod_lambda_fit)
 """
 reduce NIRSPEC data
@@ -80,8 +79,8 @@ class Main():
         
     Returns:
     -------------
-    FITS files for each cut-out and rectified order
-    PNG files for each plot
+    FITS files for each cut-out and rectified order - if write_fits=True
+    PNG files for each plot - if write_plots=True
     
     Examples:
         Instantiate reduction object
@@ -91,16 +90,16 @@ class Main():
         
     """
 
-    def __init__(self, sci_name, flat_name, dark_name='', do_extract=True, do_darksub=True,
-                 show_plot=True, cosmic_clean=True,
-                 max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0,
-                 ext_height=3, sky_distance=5, write_fits=False,
-                 sky_height=5, rawpath='', outpath='', write_plots=False,
-                 sky_sigma=2.25, traceWidth=10, backgroundWidth=30,  traceMean=True,
-                 traceLast=False, traceDelta=1.9, verbose=True):
+    def __init__(self, sci_name, flat_name='', flat_array=[], dark_name='', dark_array=[], do_extract=True,\
+                 do_darksub=True, show_plot=True, cosmic_clean=True, max_iter=3, sig_clip=5.0, sig_frac=0.3,\
+                 obj_lim=5.0, ext_height=3, sky_distance=5, write_fits=False, sky_height=5, rawpath='', outpath='',\
+                 write_plots=False,sky_sigma=2.25, traceWidth=10, backgroundWidth=30,  traceMean=True, traceLast=False,\
+                 traceDelta=1.9, verbose=True):
 
         """ Initialize reduction"""
 
+        self.flat_array = flat_array
+        self.dark_array = dark_array
         self.dark_name = dark_name
         self.do_extract = do_extract
         self.do_darksub = do_darksub
@@ -130,8 +129,13 @@ class Main():
             self.flat, self.flatheader, self.flatname = keck_fits.get_array_and_header(flat_name)
 
         else:
-            print 'I need a flat to reduce science frame'
-            return
+            if flat_array.any():
+                print 'using flat array '
+                self.flat = flat_array
+                self.flatname = 'unknown_flat_name'
+            else:
+                print 'I need a flat to reduce science frame'
+                return
 
         # instantiate nirspec specific bookkeeping and header utils
         self.nh = nirspec_util.NirspecHeader(self.sciheader)
@@ -156,7 +160,7 @@ class Main():
 
         """ takes input raw science and raw flat and produces a rectified, 
         extracted, wavelength calibrated spectrum for quick-look purposes
-        :type self: object
+
         """
 
         self.logger.info(str('Starting Data Reduction for science file ' + self.sciname))
@@ -243,7 +247,6 @@ class Main():
                                          np.array(order_number_array_stack),
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.5)
-
 
         else:
             newoh = []

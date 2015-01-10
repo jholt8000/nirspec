@@ -9,6 +9,7 @@ import scipy as sp
 import astro_math
 
 reload(astro_math)
+import scipy.signal
 try:
     from scipy.signal import argrelextrema
 except:
@@ -68,6 +69,11 @@ class BaseArray(object):
         mid = self.data.shape[0] / 2
 
         shifted = []
+        shifted2 = []
+        shifted3 = []
+        shifted4 = []
+        noshift = []
+        import pylab as pl
         if pivot == 'middle':
             # shift the curve_array to be centered at the middle of the order
             # multiply by -1 to ensure we interpolate.shift the opposite of 
@@ -89,6 +95,9 @@ class BaseArray(object):
             print "ERROR: pivot is not either 'middle' or 'peak' "
             return
 
+        pl.figure(7)
+        pl.clf()
+        pl.plot(shift_curve_array)
         # for each column (each x),  if vertical
         for i in range(0, len(shift_curve_array)):
 
@@ -97,18 +106,46 @@ class BaseArray(object):
             else:
                 order_slice = self.data[i, :]  # i is y
 
+            print 'scai=',shift_curve_array[i]
             # shift order slice to rectify in spatial dimension
             shifted.append(sp.ndimage.interpolation.shift(order_slice,
                                                           shift_curve_array[i],
                                                           order=3,
                                                           mode='nearest',
                                                           prefilter=True))
+            shifted2.append(sp.ndimage.interpolation.shift(order_slice,
+                                                          shift_curve_array[i],
+                                                          order=2,
+                                                          mode='nearest',
+                                                          prefilter=True))
+            shifted3.append(sp.ndimage.interpolation.shift(order_slice,
+                                                          shift_curve_array[i],
+                                                          order=3,
+                                                          mode='nearest',
+                                                          prefilter=False))
+            shifted4.append(sp.ndimage.interpolation.shift(order_slice,
+                                                          shift_curve_array[i],
+                                                          order=3,
+                                                          mode='constant',
+                                                          prefilter=False))
+            noshift.append(order_slice)
 
         rectified = np.array(shifted)
-        if orientation == 'vertical': rectified = rectified.transpose()
-        # self.rectified = rectified
+        rectified2 = np.array(shifted2)
+        rectified3 = np.array(shifted3)
+        pl.figure(2)
+        pl.clf()
+        pl.imshow(rectified)
+        pl.figure(3)
+        pl.clf()
+        pl.imshow(rectified2)
+        pl.figure(4)
+        pl.clf()
+        pl.imshow(noshift)
+        pl.show()
+        if orientation == 'vertical': rectified2 = rectified2.transpose()
         self.interp_shifted = True
-        return rectified
+        return rectified2
 
     def cosmic(self, max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0):
         """ call LA cosmic routine by Malte Tewes"""

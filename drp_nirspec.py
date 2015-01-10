@@ -11,17 +11,14 @@ import os
 import subprocess
 
 import nirspecOO
-
 reload(nirspecOO)
-
+print (nirspecOO)
 import astro_math
-
 reload(astro_math)
 
-import pyfits as pf
+from astropy.io import fits
 from datetime import datetime
 import optparse
-
 
 def main(datadir, outdir, utdate='default'):
     """
@@ -37,7 +34,6 @@ def main(datadir, outdir, utdate='default'):
         datadir += '/'
 
     startTime = datetime.now()
-    # os.system("logger -p local3.debug nirespec_drp: Started")
     if not os.path.exists(datadir):
         print 'no dir ' + datadir
         # os.system("logger -p local3.debug nirspec_drp: Directory not found"+datadir)
@@ -80,7 +76,7 @@ def main(datadir, outdir, utdate='default'):
         if fitsfile.endswith('gz'):
             os.system('gunzip ' + fitsfile)
         fitsfile = fitsfile.rstrip('.gz')
-        header = pf.getheader(fitsfile)
+        header = fits.getheader(fitsfile)
         try:
             koaimtyp = header['IMAGETYP']
             disppos = header['disppos']
@@ -110,11 +106,8 @@ def main(datadir, outdir, utdate='default'):
         else:
             print fitsfile + ' koaimtype=', koaimtyp
 
-    print 'science_files=', science_files
     # associate a matching dark and flat with each science frame
     for name, val in science_files.iteritems():
-        print science_files[name]
-
         science_files[name].append([])
 
         for dname, dval in dark_files.iteritems():
@@ -143,13 +136,9 @@ def main(datadir, outdir, utdate='default'):
         if len(science_files[name]) < 3:
             science_files[name][2].append('noflats')
 
-        print 'flats found=', science_files[name][2]
-        print 'darks found=', science_files[name][1]
-
     # return science_files, flat_files, dark_files
 
     for sfile in science_files.keys():
-        print 'sfile'
         if len(science_files[name][2]) > 10:
             flats = science_files[name][2][:10]
         else:
@@ -162,14 +151,10 @@ def main(datadir, outdir, utdate='default'):
         master_flat = astro_math.median_comb(flats)
         master_dark = astro_math.median_comb(darks)
 
-        # master_flat=nirspec_utils.median_comb(flats)
-        # master_dark=nirspec_utils.median_comb(darks)
-
         if len(science_files[sfile]) > 1:
-            # found matching dark
-            print 'starting reduction for science file ', sfile
+            # found matching
+            print 'starting reduction for science file ', sfile, ' using flat ',flats
             filestart = datetime.now()
-            print 'call=', 'nirspec.main(' + sfile + ', ', science_files[sfile][1] + ')'
             if '1' in filname:
                 sky_distance = 4
                 sky_height = 10
@@ -177,9 +162,12 @@ def main(datadir, outdir, utdate='default'):
                 sky_distance = 5
                 sky_height = 5
 
-            c = nirspecOO.main(sfile, master_flat, dark=master_dark, do_extract=True, verbose=True, show_plot=False,
-                               cosmic_clean=True, write_fits=False, write_plot=True, outpath=outdir,
-                               sky_distance=sky_distance, sky_height=sky_height)
+            c = nirspecOO.Main(sfile, flat_array=master_flat, dark_array=master_dark, do_extract=True, verbose=True, show_plot=False,
+                               cosmic_clean=True, write_fits=True, write_plots=True, outpath=outdir,
+                               sky_distance=sky_distance, sky_height=sky_height,  max_iter=3, sig_clip=5.0, sig_frac=0.3,
+                               obj_lim=5.0, ext_height=3, sky_sigma=2.25, traceWidth=10,
+                               backgroundWidth=30,  traceMean=True, traceLast=False, traceDelta=1.9)
+
             c.reduce_nirspec()
 
             print datetime.now() - filestart
@@ -188,7 +176,7 @@ def main(datadir, outdir, utdate='default'):
 
 if __name__ == "__main__":
     usage = """
-    %prog drp_nirspec.py input_dir output_dir utdate(optional)
+    %prog input_dir output_dir utdate(optional)
     """
     p = optparse.OptionParser(usage=usage)
     (options, args) = p.parse_args()
