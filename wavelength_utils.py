@@ -53,7 +53,7 @@ class LineId(object):
         self.lambda_shift = self.find_xcorr_shift(self.fake_sky)
 
         if abs(self.lambda_shift) < nfc.max_shift_from_theory:
-            self.theory_x = self.theory_x + self.lambda_shift
+            self.theory_x += self.lambda_shift
             self.logger.info( 'wavelength_utils: applied the xcorr shift = ' + str(self.lambda_shift) )
 
             # match sky lines
@@ -69,7 +69,7 @@ class LineId(object):
             self.logger.info('wavelength utils: could not identify lines')
             self.logger.info(' Removing xcorr shift ')
             if abs(self.lambda_shift) < nfc.max_shift_from_theory:
-                self.theory_x = self.theory_x - self.lambda_shift
+                self.theory_x -= self.lambda_shift
 
     def read_OH(self, data_table='default', ohdatfile=''):
         """

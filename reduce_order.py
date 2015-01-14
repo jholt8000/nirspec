@@ -162,6 +162,7 @@ class Reduce_order(object):
                                                      backgroundWidth=30, traceMean=self.traceMean,
                                                      traceLast=False, traceDelta=1.9)
 
+            # instance attributes defined outside __init__, need to refactor
             self.avg_spectroid, self.top_spectroid, self.bot_spectroid, self.lhs_top, self.lhs_bot = traceobj.trace_order()
 
         else:
@@ -239,32 +240,12 @@ class Reduce_order(object):
             # illumination on flat order edges
 
             fit_spectroid, foo = astro_math.fit_poly(self.avg_spectroid[0:-100], xes=np.arange(self.sciorder.data.shape[1]), deg=2)
-            fit_spectroid7, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=7)
 
-            #self.avg_spectroid, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=20)
-            smoothedh = astro_math.smooth(self.avg_spectroid, window_len=11, window='hanning')
-            smoothedf = astro_math.smooth(self.avg_spectroid, window_len=11, window='flat')
-            smoothedham = astro_math.smooth(self.avg_spectroid, window_len=11, window='hamming')
-            smoothedbm = astro_math.smooth(self.avg_spectroid, window_len=11, window='blackman')
-
-            #self.avg_spectroid, foo = astro_math.fit_poly(self.avg_spectroid, xes=np.arange(self.sciorder.data.shape[1]), deg=3)
-            import pylab as pl
-            pl.figure(1)
-            pl.clf()
-            pl.plot(self.avg_spectroid,'b')
-            pl.plot(fit_spectroid,'r')
-            pl.plot(fit_spectroid7,'g')
-            pl.plot(smoothedh,'k-')
-            pl.plot(smoothedbm, 'b-')
-            pl.plot(smoothedf,'r-')
-            pl.plot(smoothedham,'g-')
-
-            print len(self.avg_spectroid), len(fit_spectroid7), len(smoothedh)
             rectified = self.sciorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
             rectified_flat = flatorder.interp_shift(fit_spectroid, orientation='vertical', pivot='middle')
 
             # remove the padding and start at lhs_bot to show plots in correct place
-
+            # instance attributes defined outside __init__, need to refactor
             self.top_spectroid, self.avg_spectroid, self.bot_spectroid = astro_math.shift_order_back(self.top_spectroid, self.avg_spectroid, self.bot_spectroid, self.padding, order_shifted, self.lhs_bot)
 
             # overwrite data array as rectified array
@@ -291,7 +272,6 @@ class Reduce_order(object):
                                                                                             self.sky_distance,
                                                                                             self.sky_height,
                                                                                             peak,
-                                                                                            self.order_num,
                                                                                             self.logger)
             self.sciorder.__setattr__('ext_range',ext_range)
             self.sciorder.__setattr__('sky_range_top',sky_range_top)

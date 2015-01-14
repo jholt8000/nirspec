@@ -69,11 +69,7 @@ class BaseArray(object):
         mid = self.data.shape[0] / 2
 
         shifted = []
-        shifted2 = []
-        shifted3 = []
-        shifted4 = []
-        noshift = []
-        import pylab as pl
+
         if pivot == 'middle':
             # shift the curve_array to be centered at the middle of the order
             # multiply by -1 to ensure we interpolate.shift the opposite of 
@@ -95,9 +91,6 @@ class BaseArray(object):
             print "ERROR: pivot is not either 'middle' or 'peak' "
             return
 
-        pl.figure(7)
-        pl.clf()
-        pl.plot(shift_curve_array)
         # for each column (each x),  if vertical
         for i in range(0, len(shift_curve_array)):
 
@@ -113,39 +106,14 @@ class BaseArray(object):
                                                           order=3,
                                                           mode='nearest',
                                                           prefilter=True))
-            shifted2.append(sp.ndimage.interpolation.shift(order_slice,
-                                                          shift_curve_array[i],
-                                                          order=2,
-                                                          mode='nearest',
-                                                          prefilter=True))
-            shifted3.append(sp.ndimage.interpolation.shift(order_slice,
-                                                          shift_curve_array[i],
-                                                          order=3,
-                                                          mode='nearest',
-                                                          prefilter=False))
-            shifted4.append(sp.ndimage.interpolation.shift(order_slice,
-                                                          shift_curve_array[i],
-                                                          order=3,
-                                                          mode='constant',
-                                                          prefilter=False))
-            noshift.append(order_slice)
+
 
         rectified = np.array(shifted)
-        rectified2 = np.array(shifted2)
-        rectified3 = np.array(shifted3)
-        pl.figure(2)
-        pl.clf()
-        pl.imshow(rectified)
-        pl.figure(3)
-        pl.clf()
-        pl.imshow(rectified2)
-        pl.figure(4)
-        pl.clf()
-        pl.imshow(noshift)
-        pl.show()
-        if orientation == 'vertical': rectified2 = rectified2.transpose()
+
+
+        if orientation == 'vertical': rectified = rectified.transpose()
         self.interp_shifted = True
-        return rectified2
+        return rectified
 
     def cosmic(self, max_iter=3, sig_clip=5.0, sig_frac=0.3, obj_lim=5.0):
         """ call LA cosmic routine by Malte Tewes"""
@@ -249,6 +217,7 @@ class SciArray(BaseArray):
     """
 
     def __init__(self, data):
+        super(SciArray, self).__init__(data)
         self.data = data
 
     def find_skyline_trace(self, sky_sigma=4.0, padding=30.):
@@ -314,9 +283,21 @@ class SciArray(BaseArray):
         return sky_line, sky_line_success
 
     def setup_extraction_ranges(self, ext_height, sky_distance, sky_height,
-                                peak, order, logger):
+                                peak, logger):
+        """
 
-        print "ext_height, sky_distance, sky_height, peak, order=",ext_height, sky_distance, sky_height, peak, order
+        :param ext_height: integer
+            distance around central continuum pixel to sum up
+        :param sky_distance: integer
+            distance away from central continuum pixel to look for sky lines
+        :param sky_height: integer
+            how many sky line rows to sum up to get a good sky
+        :param peak: integer
+            location of central continuum pixel
+        :param logger: logger instance, if used
+        :return:
+        """
+
 
         if ext_height % 2:  # odd values typically across the continuum - recall range(-1, 2) is (-1, 0, 1)
             ext_range = range(int((1 - ext_height) / 2.), int((ext_height + 1) / 2.))
@@ -354,13 +335,23 @@ class SciArray(BaseArray):
                 sky_range_top = []
 
         if self.data.shape[0] - peak < 2 or peak < 3:
-            logger.error('WARNING  array_manipulate.setup_extraction ranges: cannot find a peak in order ' + str(order) + ' skipping extraction ')
+            logger.error('WARNING  array_manipulate.setup_extraction ranges: cannot find a peak, skipping extraction ')
             return 'ERROR', 'ERROR', 'ERROR'
 
         return ext_range, sky_range_top, sky_range_bot
 
 
     def get_sky(self, peak, sky_range_bot, sky_range_top):
+        """
+        sum up columns in range peak+sky_range_bot and peak-sky_range_top
+        :param peak: integer
+            location of continuum
+        :param sky_range_bot: tuple, list, or np.array
+            range of sky to sum up below the continuum
+        :param sky_range_top: tuple, list, or np.array
+            range of sky to sum up above the continuum
+        :return: sky continuum
+        """
 
         sky_height_bot = len(sky_range_bot)
         sky_height_top = len(sky_range_top)
@@ -389,7 +380,7 @@ class SciArray(BaseArray):
         return sky
 
     def sum_extract(self, ext_range, sky_range_bot, sky_range_top):
-        """ extract peak
+        """ extract data using a non-weighted sum, subtracts sky if given sky_range_bot and sky_range_top
 
         Parameters
         ----------
@@ -404,6 +395,15 @@ class SciArray(BaseArray):
         extracted spectrum
         extracted off peak "sky" spectra
         status
+
+        Example
+        -----------
+        science_array = array_manipulate(fitsdata)
+        continuum, sky, status = science_array.sum_extract([-1, 0, 1], [-5,-4,-3], [3, 4, 5])
+        import pylab
+        pylab.plot(sky)
+        pylab.show()
+
         """
         cross_cut = self.data.sum(axis=1)
 
@@ -412,11 +412,16 @@ class SciArray(BaseArray):
         try:
             extracted = np.sum(data_array[peak - i, :] for i in ext_range)
             extracted /= len(ext_range)
-            # sets self.sky
-            sky = self.get_sky(peak, sky_range_bot, sky_range_top)
-            cont = extracted - sky  # subtract sky from peak
-            sky = sky - sky.mean()
-            extract_status = 1
+            if sky_range_top and sky_range_bot:
+                # sets self.sky
+                sky = self.get_sky(peak, sky_range_bot, sky_range_top)
+                cont = extracted - sky  # subtract sky from peak
+                sky = sky - sky.mean()
+                extract_status = 1
+            else:
+                sky=[]
+                cont = extracted
+                extract_status=1
         except:
             cont = []
             sky = 'bad'
@@ -435,16 +440,12 @@ class FlatArray(BaseArray):
     def __init__(self, data):
         """
 
-
-        :type self: object
-        :rtype : object
-        """
+            :type self: object
+            :rtype : object
+            """
+        super(FlatArray, self).__init__(data)
         self.data = data
-        # shift and subtract flat from itself 
-        # to get top and bottom starting locations
-        # sets self.tops, self.bots
-
-        self.make_tops_bots()
+        self.tops, self.bots = self.make_tops_bots()
 
     def normalize(self, on_order=1.0, off_order=1.0, mask=True, instr="NIRSPEC"):
         """
@@ -503,8 +504,8 @@ class FlatArray(BaseArray):
         f2 = np.roll(self.data, 5, axis=0)
         tops = f2 - self.data
         bots = self.data - f2
-        self.tops = tops
-        self.bots = bots
+        return tops, bots
+
 
     @staticmethod
     def trace_order(tops, bots, nh, data_dict, order, logger, sciobj):

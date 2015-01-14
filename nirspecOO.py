@@ -64,14 +64,14 @@ class Main():
         height in pixels of continuum to be extracted
     :param sky_distance: int
         length in pixels away from center of continuum to extract sky
-    :param write_fits: Boolean
-        write out fits output of each individual rectified order
     :param sky_height: int
         height in pixels of sky to be extracted
     :param rawpath: str
         location of input files
     :param outpath: str
         desired location of output files
+    :param write_fits: Boolean
+        write out fits output of each individual rectified order
     :param write_plots: Boolean
         write PNG snapshots of output data
     :param sky_sigma: float
@@ -92,8 +92,8 @@ class Main():
 
     def __init__(self, sci_name, flat_name='', flat_array=[], dark_name='', dark_array=[], do_extract=True,\
                  do_darksub=True, show_plot=True, cosmic_clean=True, max_iter=3, sig_clip=5.0, sig_frac=0.3,\
-                 obj_lim=5.0, ext_height=3, sky_distance=5, write_fits=False, sky_height=5, rawpath='', outpath='',\
-                 write_plots=False,sky_sigma=2.25, traceWidth=10, backgroundWidth=30,  traceMean=True, traceLast=False,\
+                 obj_lim=5.0, ext_height=3, sky_distance=5, sky_height=5, rawpath='', outpath='', write_plots=False, \
+                 write_fits=False, sky_sigma=2.25, traceWidth=10, backgroundWidth=30, traceMean=True, traceLast=False,\
                  traceDelta=1.9, verbose=True):
 
         """ Initialize reduction"""
@@ -180,10 +180,6 @@ class Main():
             sciObj.data -= self.dark_name
             flatObj.data -= self.dark_name
 
-        # inherit self (current cosmic ray reduction) attributes to sciObj and flatObj - not a good way to go -JH
-        #sciObj.__dict__.update(self.__dict__)
-        #flatObj.__dict__.update(self.__dict__)
-
         if self.cosmic_clean:
             self.logger.info(str('cosmic ray cleaning using LA Cosmic'))
 
@@ -248,8 +244,7 @@ class Main():
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.5)
 
-        else:
-            newoh = []
+
         # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
             newoh = twod_lambda_fit.applySolution(order_object, p1)
