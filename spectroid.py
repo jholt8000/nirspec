@@ -37,8 +37,9 @@ def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926
            traceLast will take precedence over traceMean if both are set to True
      :parameter traceDelta: threshold for unacceptable jump in centroid location
      
-    :returns: the centroid trace along the x-direction, the number of times the
-    centroiding went outside of centroid[i-1]*traceDelta
+    :returns:
+    cm: the centroid trace along the x-direction
+    badfit: the number of times the centroiding went outside of centroid[i-1]*traceDelta
     """
 
     # initialize "center of mass" array to be populated with centroids
@@ -84,9 +85,15 @@ def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926
             if backgroundMin < 0:
                 backgroundMin = 0
 
-            # find the values to subtract from the array 
-            backgroundMax_val = dataArray[backgroundMax, i]
-            backgroundMin_val = dataArray[backgroundMin, i]
+            # find the values to subtract from the array
+            try:
+                backgroundMax_val = dataArray[backgroundMax, i]
+                backgroundMin_val = dataArray[backgroundMin, i]
+            except:
+                backgroundWidth = 0
+                backgroundMax_val = 0
+                backgroundMin_val = 0
+
             bk_mean = (backgroundMax_val + backgroundMin_val) / 2.
 
         else:

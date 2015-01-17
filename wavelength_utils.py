@@ -59,7 +59,6 @@ class LineId(object):
             # match sky lines
             id_tuple = self.identify(self.ohx, self.ohy)
 
-            print 'id_tuple=',id_tuple
             if len(id_tuple) > 0:
                 self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
                 self.identify_status, self.matchesidx = id_tuple
@@ -124,7 +123,11 @@ class LineId(object):
 
         x = np.array(ohx)
         y = np.array(ohy)
-        all_g = y[0]
+        if y.any():
+            all_g = y[0]
+        else:
+            return []
+
         for i in np.arange(0, x.size):
             if y[i] > 0.01:
                 g = y[i] * np.exp(-(self.theory_x - x[i]) ** 2 / (2. * sig ** 2))
@@ -139,6 +142,9 @@ class LineId(object):
 
         ohg = np.array([self.theory_x, ohgs])  # ohg is a synthetic spectrum of gaussians
         # at skylines in list
+
+        if not ohg.any():
+            raise AttributeError('need a fake sky line file')
 
         xcorrshift = astro_math.arg_max_corr(ohg[1], self.sky)
 

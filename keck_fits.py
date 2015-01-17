@@ -8,6 +8,7 @@ Created on Wed Apr 09 14:23:52 2014
 from astropy.io import fits
 
 def get_array_and_header(file1):
+
         if isinstance(file1, str):
             hdulist = fits.open(file1)
             hdr = hdulist[0].header

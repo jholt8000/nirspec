@@ -184,7 +184,6 @@ def fit_poly(cm, xes='default', deg=4):
         xes = np.arange(len(cm))
 
     cmfit = np.polyval(p0,xes)
-    print 'cmfit=',cmfit
 
     return cmfit, p0
 
@@ -196,3 +195,41 @@ def actual_to_theory(loc1, loc2, threshold='40'):
         return False
 
 
+def get_actual_order_pos(edges, theory, threshold):
+
+        # older versions of scipy do not have this
+        # I only require it when needed
+        from scipy.signal import argrelextrema
+
+        # take a vertical cut of edges
+        magcrosscut = np.sum(edges[:, 0:10], axis=1)
+
+        import pylab as pl
+        print 'theory=',theory
+        pl.figure(6)
+        pl.clf()
+        pl.imshow(edges[:,0:10])
+
+        pl.figure(7)
+        pl.clf()
+        pl.plot(magcrosscut)
+
+        # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
+        extrema = argrelextrema(magcrosscut, np.greater, order=35)[0]
+
+        # find crosscut values at those extrema
+        magcrosscutatextrema = magcrosscut[extrema]
+        pl.plot(extrema, magcrosscutatextrema,'r*')
+        pl.show()
+        # narrow down extrema list to only ones over threshold
+        peaks = np.where(magcrosscutatextrema > threshold)
+
+        actualpeaks = extrema[peaks[0]]
+        print 'actualpeaks=',actualpeaks
+        if actualpeaks.any():
+            actual = min((abs(theory - i), i) for i in actualpeaks)[1]
+        else:
+            return -3000
+
+        print 'actual=',actual
+        return actual

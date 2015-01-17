@@ -151,10 +151,6 @@ class Reduce_order(object):
         if (self.lhs_top_theory < self.detector_height + NirspecFudgeConstants.total_chip_padding
             and self.lhs_bot_theory > -NirspecFudgeConstants.total_chip_padding):
 
-            self.logger.info('Actual -- left bot = ' + str(int(self.lhs_bot_theory)) +
-                                        ' left top = ' + str(int(self.lhs_top_theory)))
-
-
             traceobj = trace_order.Trace(self.lhs_top_theory, self.lhs_bot_theory,
                                                      order_threshold=self.order_threshold, order_num=self.order_num,
                                                      logger=self.logger, flatobj=self.flatobj, flat_data=[],
@@ -305,6 +301,7 @@ class Reduce_order(object):
 
         else:
             text = 'WARNING could not fit sky lines, not rectifying spectral dimension '
+            self.do_extract = False
             self.logger.info(text)
 
         # Extract spectrum and subtract sky ##

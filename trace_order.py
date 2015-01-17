@@ -149,8 +149,8 @@ class Trace(object):
             self.trace_success = False
             lhs_top = self.lhs_top_theory
 
-        if avg_spectroid.any():
-
+        if traced_top or traced_bot:
+            # avg_spectroid will be a numpy array
             self.trace_success = True
             return avg_spectroid, top_spectroid, bot_spectroid, lhs_top, lhs_bot
 
@@ -161,7 +161,7 @@ class Trace(object):
         """  find location of either top or bottom of the order using theoretical position
         as a starting point """
         # Find the peaks in the shifted/subracted flat file near the theoretical peaks
-        lhs_edge_pos = nirspec_util.NirspecHeader.get_actual_order_pos(edges, theory_lhs, self.order_sigma)
+        lhs_edge_pos = astro_math.get_actual_order_pos(edges, theory_lhs, self.order_sigma)
 
         self.logger.info('found a peak at ' + str(lhs_edge_pos))
 
@@ -174,10 +174,10 @@ class Trace(object):
             self.logger.info('searching for top edge on a fainter flat')
             self.logger.info('  ---> this might affect the rectification')
 
-            lhs_edge_pos = self.nh.get_actual_order_pos(edges, theory_lhs,
+            lhs_edge_pos = astro_math.get_actual_order_pos(edges, theory_lhs,
                                                                      self.order_sigma / 3)
             found_top = astro_math.actual_to_theory(lhs_edge_pos, theory_lhs,
-                                                    self.order_sigma)
+                                                    self.order_threshold / 3)
 
             if not found_top:
                 self.logger.info('Flat is too faint in this order ')

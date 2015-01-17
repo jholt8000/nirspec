@@ -99,7 +99,6 @@ class BaseArray(object):
             else:
                 order_slice = self.data[i, :]  # i is y
 
-            print 'scai=',shift_curve_array[i]
             # shift order slice to rectify in spatial dimension
             shifted.append(sp.ndimage.interpolation.shift(order_slice,
                                                           shift_curve_array[i],
@@ -496,6 +495,7 @@ class FlatArray(BaseArray):
 
     def make_tops_bots(self):
         """
+
         make arrays with only the top edges of the orders and only the bottom
         edges of the orders. typically a flat is just shifted and subtracted
         from itself.
@@ -504,157 +504,6 @@ class FlatArray(BaseArray):
         f2 = np.roll(self.data, 5, axis=0)
         tops = f2 - self.data
         bots = self.data - f2
+
         return tops, bots
-
-
-    @staticmethod
-    def trace_order(tops, bots, nh, data_dict, order, logger, sciobj):
-        # moved to trace_order.py, this version is not used
-        # this finds theoretical order position, finds the peaks in tops,bots,
-        # runs spectroid on those peaks, dx is theoretical wavelength array
-
-        lhs_top_theory, lhs_bot_theory, dx = nh.get_theory_order_pos(order)
-
-        lhs_bot = -1
-        lhs_top = -1
-
-        cb = np.array(0)
-        ct = np.array(0)
-        cm = np.array(0)
-        highest_top = -1
-
-        logger.info('Theory -- left bot = ' + str(int(lhs_bot_theory)) + \
-                    ' left top = ' + str(int(lhs_top_theory)))
-
-        if lhs_top_theory < sciobj.data.shape[0] + 20 and lhs_bot_theory > -20:
-
-            # Find the peaks in the shifted/subracted flat file near the theoretical peaks
-            lhs_top = nh.get_actual_order_pos(tops, lhs_top_theory,
-                                              data_dict['threshold'])
-
-            logger.info('found a peak at ' + str(lhs_top))
-
-            # Ensure the theoretical location and the actual location of 
-            # the top of the order are close enough
-            found_top = astro_math.actual_to_theory(lhs_top, lhs_top_theory,
-                                                    data_dict['order_threshold'])
-
-            if not found_top:
-                logger.info('searching for top edge on a fainter flat')
-                logger.info('  ---> this might affect the rectification')
-
-                lhs_top = nh.get_actual_order_pos(tops, lhs_top_theory,
-                                                  data_dict['threshold'] / 3)
-                found_top = astro_math.actual_to_theory(lhs_top, lhs_top_theory,
-                                                        data_dict['order_threshold'])
-
-                if not found_top:
-                    logger.info('Flat is too faint in this order, ' + str(order))
-                    logger.info('Cannot find order location')
-                    # order = order - 1
-                    return lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm, order, highest_top, dx
-
-            # Find the peaks in the shifted/subracted flat file near the 
-            # theoretical peaks
-            lhs_bot = nh.get_actual_order_pos(bots, lhs_bot_theory,
-                                              data_dict['threshold'])
-
-            logger.info('found a peak at ' + str(lhs_bot))
-
-            # Ensure the theoretical location and the actual location of 
-            # the bot of the order are close enough
-            found_bot = astro_math.actual_to_theory(lhs_bot, lhs_bot_theory,
-                                                    data_dict['order_threshold'])
-
-            if not found_bot:
-                logger.info('searching for top edge on a fainter flat')
-                logger.info('  ---> this might affect the rectification')
-
-                lhs_bot = nh.get_actual_order_pos(bots, lhs_bot_theory,
-                                                  data_dict['threshold'] / 3)
-                found_bot = astro_math.actual_to_theory(lhs_bot, lhs_bot_theory,
-                                                        data_dict['order_threshold'])
-
-                if not found_bot:
-                    logger.info('Flat is too faint in this order ' + str(order))
-                    logger.info('Cannot find order location')
-                    order -= 1
-                    return lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm, order, highest_top, dx
-
-            logger.info('Measured -- left bot = ' + str(int(lhs_bot)))
-            logger.info('            left top = ' + str(int(lhs_top)))
-
-            if lhs_top < lhs_bot:
-                logger.info('top of order cannot be below bottom')
-                logger.info('skipping order: ' + str(order))
-                # order = order-1
-                return lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm, order, highest_top, dx
-        else:
-
-            if lhs_bot_theory > 1100 or lhs_top_theory > 1200:
-                lhs_top = lhs_top_theory
-                lhs_bot = lhs_bot_theory
-                # order = order-100
-                # else: order = order-1
-                # lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm,
-                # self.neworder, highest_top, sciobj.dx
-            return lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm, order, highest_top, dx
-
-        # # spectroid on top and bottom of order location #####
-        # call flatobj.centroiding task, using the location of the peak and zero
-        # background subtraction            
-        # ct is the centroid fit to the top of the order
-        # bft is bad fit top = number of times spectroid had to self-correct
-        ct, bft = spectroid(tops, traceWidth=data_dict['spw'], backgroundWidth=0, startingLocation=lhs_top,
-                            traceMean=True, traceLast=False, traceDelta=data_dict['trace_delta'])
-
-        logger.info('had to self correct on top = ' + str(bft) + ' times ')
-        if bft > 300.:
-            traced_top = False
-        else:
-            traced_top = True
-
-        try:  # where to cut out the array to isolate order
-            highest_top = max(ct[0], ct[1010])
-        except:
-            traced_top = False
-
-        cb, bfb = spectroid(bots, traceWidth=data_dict['spw'], backgroundWidth=0, startingLocation=lhs_bot,
-                            traceMean=True, traceLast=False,
-                            traceDelta=data_dict['trace_delta'])
-
-        logger.info('had to self correct on bottom = ' + str(bfb) + ' times ')
-        if bfb > 300.:
-            traced_bot = False
-        else:
-            traced_bot = True
-
-        try:
-            lhs_bot = cb[1]
-        except:
-            traced_bot = False
-
-        if not traced_bot or not traced_top:
-            logger.info('order: ' + str(order) + ' not on detector  ')
-            # don't keep tracing until order=1 once off of chip
-            # if lhs_bot_theory > 1100 or lhs_top_theory > 1200:
-            # order = order-100
-            # else: order = order-1
-            return lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm, order, highest_top, dx
-
-        cm = np.array([])
-
-        if traced_top and traced_bot:
-            # find the mean of the centroid along the top of the order and
-            # along the bottom of the order
-            cm = (ct + cb) / 2.
-        elif traced_top:
-            logger.info('using only top curve ')
-            cm = ct - ((lhs_top - lhs_bot) / 2) + 1.
-        elif traced_bot:
-            logger.info('using only bottom curve ')
-            cm = cb + ((lhs_top - lhs_bot) / 2) + 1.
-
-        return lhs_bot, lhs_top, lhs_bot_theory, lhs_top_theory, cb, ct, cm, order, highest_top, dx
-
 

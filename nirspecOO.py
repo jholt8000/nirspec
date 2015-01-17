@@ -189,6 +189,16 @@ class Main():
             flatObj.cosmic(sig_clip=self.sig_clip, sig_frac=self.sig_frac,
                                  obj_lim=self.obj_lim)
 
+        import pylab as pl
+        pl.figure(1)
+        pl.imshow(flatObj.data)
+        pl.figure(2)
+        pl.imshow(sciObj.data)
+        pl.figure(3)
+        pl.imshow(flatObj.tops)
+        pl.figure(4)
+        pl.imshow(flatObj.bots)
+
         # initialize variables and lists
         lhs_top = 0
         all_order_objects = []
@@ -242,11 +252,13 @@ class Main():
             p1, newoh, dataZZ = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
                                          np.array(order_number_array_stack),
                                          np.array(matched_sky_line_stack), logger=self.logger,
-                                         lower_len_points=10., sigma_max=0.5)
-
+                                         lower_len_points=10., sigma_max=0.3)
+        else:
+            p1 = []
 
         # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
+
             newoh = twod_lambda_fit.applySolution(order_object, p1)
 
             # ## make plots and output FITS files
@@ -257,3 +269,4 @@ class Main():
         self.logger.info('Finished quicklook reduction for science file ' + self.sciname)
 
         self.nb.close_logger()
+        #return np.array(orig_pix_x_stack), np.array(order_number_array_stack),  np.array(matched_sky_line_stack), self.logger

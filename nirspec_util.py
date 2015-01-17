@@ -124,8 +124,11 @@ class NirspecBookkeeping(object):
             pl.title("Order=" + str(sciorder.order_num))
             ax1 = pl.subplot(211)
             pl.title("Order=" + str(sciorder.order_num))
-            pl.plot(dx_2dfit, sciorder.cont, 'r', label='avg of central rows')
-            pl.xlim([dx_2dfit[0], dx_2dfit[-1]])
+            if len(dx_2dfit) == len(sciorder.cont):
+                pl.plot(dx_2dfit, sciorder.cont, 'r', label='avg of central rows')
+                pl.xlim([dx_2dfit[0], dx_2dfit[-1]])
+            else:
+                pl.plot(lineobj.theory_x, sciorder.cont, 'r', label='avg of central rows')
             pl.subplot(212, sharex=ax1)
             pl.xlabel("$\mu$")
         else:
@@ -133,8 +136,12 @@ class NirspecBookkeeping(object):
             pl.title("Order=" + str(sciorder.order_num))
             #pl.xlabel("$\AA$")
 
-        pl.imshow(sciorder.data, origin='lower',
+        if len(dx_2dfit) > 0:
+            pl.imshow(sciorder.data, origin='lower',
                   extent=[dx_2dfit[0], dx_2dfit[-1], 0, sciorder.data.shape[0]], aspect='auto')
+        else:
+            pl.imshow(sciorder.data, origin='lower',
+                  extent=[lineobj.theory_x[0], lineobj.theory_x[-1], 0, sciorder.data.shape[0]], aspect='auto')
         pl.xlabel("$\AA$")
         if allreduceobj.write_plots:
             pl.savefig(
@@ -150,6 +157,30 @@ class NirspecBookkeeping(object):
             #    order_obj.bot_spectroid = 0
             #if not allreduceobj.traced_top:
             #    order_obj.top_spectroid = 0
+
+
+            pl.figure(15)
+            pl.clf()
+            pl.imshow(flatobj.tops, origin='lower')
+            pl.plot(10, order_obj.lhs_bot, 'c*')
+            pl.plot(10, order_obj.lhs_top, 'g*')
+            pl.plot(10, order_obj.lhs_top_theory, 'r+')
+            pl.plot(10, order_obj.lhs_bot_theory, 'r+')
+            pl.plot(order_obj.avg_spectroid, 'k', lw=2)
+            pl.plot(order_obj.top_spectroid, 'g', lw=2)
+            pl.plot(order_obj.bot_spectroid, 'g', lw=2)
+
+
+            pl.figure(16)
+            pl.clf()
+            pl.imshow(flatobj.bots, origin='lower')
+            pl.plot(10, order_obj.lhs_bot, 'c*')
+            pl.plot(10, order_obj.lhs_top, 'g*')
+            pl.plot(10, order_obj.lhs_top_theory, 'r+')
+            pl.plot(10, order_obj.lhs_bot_theory, 'r+')
+            pl.plot(order_obj.avg_spectroid, 'k', lw=2)
+            pl.plot(order_obj.top_spectroid, 'g', lw=2)
+            pl.plot(order_obj.bot_spectroid, 'g', lw=2)
 
             pl.figure(18)
             pl.clf()
@@ -181,8 +212,8 @@ class NirspecBookkeeping(object):
                 pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'allsci' + str(sciorder.order_num) + '.png',
                            bbox_inches=0)
 
-            #if allreduceobj.show_plot and (sciorder.order_num==37 or sciorder.order_num==38):
-            pl.show()
+            if allreduceobj.show_plot :
+               pl.show()
 
     @staticmethod
     def close_logger():
@@ -372,6 +403,10 @@ class NirspecHeader(object):
         # rhs_top=rhs_mid+0.5*(99.488-(1.0517*self.header['disppos']))
         # rhs_bot=rhs_mid-0.5*(99.488-(1.0517*self.header['disppos']))
 
+        if 'NIRSPEC-3' in self.filter_name:
+            lhs_top=lhs_top - 30
+            lhs_bot=lhs_bot - 30
+
         # if slit is "taller", account for that
         if '24' in self.header['slitname']:
             lhs_top += 20.
@@ -432,34 +467,7 @@ class NirspecHeader(object):
             str1 = ''
         return str1
 
-    @staticmethod
-    def get_actual_order_pos(edges, theory, threshold):
 
-        # older versions of scipy do not have this
-        # I only require it when needed
-        from scipy.signal import argrelextrema
-
-        # take a vertical cut of edges 
-        magcrosscut = np.sum(edges[:, 0:10], axis=1)
-
-        # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
-        extrema = argrelextrema(magcrosscut, np.greater, order=15)[0]
-
-        # find crosscut values at those extrema
-        magcrosscutatextrema = magcrosscut[extrema]
-
-        # narrow down extrema list to only ones over threshold
-        peaks = np.where(magcrosscutatextrema > threshold)
-
-        actualpeaks = extrema[peaks[0]]
-
-        if actualpeaks.any():
-            actual = min((abs(theory - i), i) for i in actualpeaks)[1]
-        else:
-            return -3000
-
-        return actual    
- 
  
  
 

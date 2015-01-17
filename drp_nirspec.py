@@ -162,8 +162,8 @@ def main(datadir, outdir, utdate='default'):
                 sky_distance = 5
                 sky_height = 5
 
-            c = nirspecOO.Main(sfile, flat_array=master_flat, dark_array=master_dark, do_extract=True, verbose=True, show_plot=False,
-                               cosmic_clean=True, write_fits=True, write_plots=True, outpath=outdir,
+            c = nirspecOO.Main(sfile, flat_array=master_flat, dark_array=master_dark, do_extract=True, verbose=True,
+                               show_plot=True,cosmic_clean=True, write_fits=False, write_plots=True, outpath=outdir,
                                sky_distance=sky_distance, sky_height=sky_height,  max_iter=3, sig_clip=5.0, sig_frac=0.3,
                                obj_lim=5.0, ext_height=3, sky_sigma=2.25, traceWidth=10,
                                backgroundWidth=30,  traceMean=True, traceLast=False, traceDelta=1.9)
