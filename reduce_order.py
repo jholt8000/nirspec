@@ -147,7 +147,6 @@ class Reduce_order(object):
         self.logger.info('Theory -- left bot = ' + str(int(self.lhs_bot_theory)) +
                                       ' left top = ' + str(int(self.lhs_top_theory)))
 
-
         if (self.lhs_top_theory < self.detector_height + NirspecFudgeConstants.total_chip_padding
             and self.lhs_bot_theory > -NirspecFudgeConstants.total_chip_padding):
 
@@ -301,7 +300,7 @@ class Reduce_order(object):
 
         else:
             text = 'WARNING could not fit sky lines, not rectifying spectral dimension '
-            self.do_extract = False
+            #self.do_extract = False
             self.logger.info(text)
 
         # Extract spectrum and subtract sky ##
@@ -354,5 +353,5 @@ class Reduce_order(object):
 
                     # need to store all the pre-wavelength fixed data to make out files
 
-        self.logger.error('Finished reducing order = ' + str(self.order_num))
+        self.logger.info('Finished reducing order = ' + str(self.order_num))
 

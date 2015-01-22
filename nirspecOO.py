@@ -168,7 +168,7 @@ class Main():
         # Get pre-canned starting self.order_nums & self.order_num sizes for each filter
 
         if self.data_dict['startord'] == 9999:
-            self.logger.error('Filter name ' + str(self.header['filname']) + ' is not ready')
+            self.logger.error('Filter name is not ready')
             return
 
         # instantiate sciObj and flatObj objects
@@ -198,7 +198,7 @@ class Main():
         pl.imshow(flatObj.tops)
         pl.figure(4)
         pl.imshow(flatObj.bots)
-
+        pl.show()
         # initialize variables and lists
         lhs_top = 0
         all_order_objects = []
@@ -258,7 +258,7 @@ class Main():
 
         # Go back through each order and apply the 2d wavelength fit found
         for order_object in all_order_objects:
-
+            self.logger.info(' plotting result for order '+str(order_object.sciorder.order_num))
             newoh = twod_lambda_fit.applySolution(order_object, p1)
 
             # ## make plots and output FITS files

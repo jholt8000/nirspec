@@ -189,13 +189,14 @@ def fit_poly(cm, xes='default', deg=4):
 
 
 def actual_to_theory(loc1, loc2, threshold='40'):
+    print 'threshold=',threshold
     if abs(loc1 - loc2) < threshold and loc1 > 1:
         return True
     else:
         return False
 
 
-def get_actual_order_pos(edges, theory, threshold):
+def get_actual_order_pos(edges, theory, sigma):
 
         # older versions of scipy do not have this
         # I only require it when needed
@@ -220,9 +221,9 @@ def get_actual_order_pos(edges, theory, threshold):
         # find crosscut values at those extrema
         magcrosscutatextrema = magcrosscut[extrema]
         pl.plot(extrema, magcrosscutatextrema,'r*')
-        pl.show()
+        #pl.show()
         # narrow down extrema list to only ones over threshold
-        peaks = np.where(magcrosscutatextrema > threshold)
+        peaks = np.where(magcrosscutatextrema > sigma)
 
         actualpeaks = extrema[peaks[0]]
         print 'actualpeaks=',actualpeaks

@@ -146,7 +146,11 @@ class LineId(object):
         if not ohg.any():
             raise AttributeError('need a fake sky line file')
 
-        xcorrshift = astro_math.arg_max_corr(ohg[1], self.sky)
+        try:
+            xcorrshift = astro_math.arg_max_corr(ohg[1], self.sky)
+        except:
+            self.logger.info('Could not find x-corr shift for arrays of shape '+str(len(ohg[1])+' and '+str(len(self.sky))))
+            xcorrshift=0
 
         delta_x = (ohg[0][-1] - ohg[0][0]) / float(ohg[0].size)
         #self.lambda_shift = xcorrshift * delta_x

@@ -79,9 +79,9 @@ class Trace(object):
         ''' finds actual edge positions using lhs_top_theory and lhs_bot_theory as starting points
             runs spectroid on those peaks'''
         # this should be returning parameters
-
+        self.logger.info("searching for lhs tops")
         lhs_top = self.determine_lhs_edge_pos(self.flatobj.tops, self.lhs_top_theory)
-
+        self.logger.info("searching for lhs bots")
         lhs_bot = self.determine_lhs_edge_pos(self.flatobj.bots, self.lhs_bot_theory)
 
         self.logger.info('Measured -- left bot = ' + str(int(lhs_bot)))
@@ -93,12 +93,15 @@ class Trace(object):
             # call centroiding task, using the location of the peak and zero
             # background subtraction
             # bft = bad fit top = number of times spectroid had to self-correct
-
-            top_spectroid, bft = spectroid(self.flatobj.tops, traceWidth=self.traceWidth,
+            try:
+                top_spectroid, bft = spectroid(self.flatobj.tops, traceWidth=self.traceWidth,
                                                 backgroundWidth=self.backgroundWidth,
                                                 startingLocation=lhs_top, traceMean=self.traceMean,
                                                 traceLast=self.traceLast, traceDelta=self.traceDelta)
 
+            except:
+                self.logger.error('Could not trace starting at '+str(lhs_top))
+                top_spectroid, bft = (0, 9999)
 
             self.logger.info('had to self correct on top = ' + str(bft) + ' times ')
 
@@ -109,11 +112,14 @@ class Trace(object):
                     traced_top = False
             else:
                 traced_top = False
-
-            bot_spectroid, bfb = spectroid(self.flatobj.bots, traceWidth=self.traceWidth,
+            try:
+                bot_spectroid, bfb = spectroid(self.flatobj.bots, traceWidth=self.traceWidth,
                                                 backgroundWidth=self.backgroundWidth,
                                                 startingLocation=lhs_bot, traceMean=self.traceMean,
                                                 traceLast=self.traceLast, traceDelta=self.traceDelta)
+            except:
+                self.logger.error('Could not trace starting at '+str(lhs_bot))
+                bot_spectroid, bfb = (0, 9999)
 
             self.logger.info('had to self correct on bottom = ' + str(bfb) + ' times ')
 
@@ -148,6 +154,8 @@ class Trace(object):
             self.logger.info('skipping order: ' + str(self.order_num))
             self.trace_success = False
             lhs_top = self.lhs_top_theory
+            traced_top = False
+            traced_bot = False
 
         if traced_top or traced_bot:
             # avg_spectroid will be a numpy array

@@ -293,25 +293,25 @@ class NirspecHeader(object):
 
         if 'NIRSPEC-1' in self.filter_name:
             data_dict = {'filt': 1, 'startord': 80, 'padding': 0 * padding_modify, 'order_sigma': 1000, 'spw': 5.,
-                         'traceWidth': 1.5, 'order_threshold':1000}
+                         'traceWidth': 1.5, 'order_threshold':20}
         elif 'NIRSPEC-2' in self.filter_name:
             data_dict = {'filt': 2, 'startord': 70, 'padding': 0 * padding_modify, 'order_sigma': 3000, 'spw': 5.,
-                         'traceWidth': 1.5,'order_threshold':1000}
+                         'traceWidth': 1.5,'order_threshold':20}
         elif 'NIRSPEC-3' in self.filter_name:
             data_dict = {'filt': 3, 'startord': 67, 'padding': 0 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
-                         'traceWidth': 1.1,'order_threshold':1000}
+                         'traceWidth': 1.1,'order_threshold':20}
         elif 'NIRSPEC-4' in self.filter_name:
             data_dict = {'filt': 4, 'startord': 61, 'padding': 10 + 5 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
-                         'traceWidth': 1.1,'order_threshold':1000}
+                         'traceWidth': 1.1,'order_threshold':20}
         elif 'NIRSPEC-5' in self.filter_name:
             data_dict = {'filt': 5, 'startord': 53, 'padding': 10 + 5 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
-                         'traceWidth': 1.1,'order_threshold':1000}
+                         'traceWidth': 1.1,'order_threshold':20}
         elif 'NIRSPEC-6' in self.filter_name:
-            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'threshold': 10000, 'traceWidth': 1.1,'order_sigma':1000}
+            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'order_threshold': 20, 'traceWidth': 1.1,'order_sigma':1000}
         elif 'NIRSPEC-7' in self.filter_name:
-            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'threshold': 30000, 'spw': 3., 'traceWidth': 1.1,'order_sigma':1000}
+            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'order_threshold': 20, 'spw': 3., 'traceWidth': 1.1,'order_sigma':1000}
         else:
-            data_dict = {'filt': self.filter_name, 'startord': 9999, 'padding': 9999, 'threshold': 9999, 'spw': 9999,
+            data_dict = {'filt': self.filter_name, 'startord': 9999, 'padding': 9999, 'order_threshold': 9999, 'spw': 9999,
                          'traceWidth': 9999,'order_sigma':1000}
 
         if '24' in self.header['slitname']:
@@ -382,7 +382,7 @@ class NirspecHeader(object):
             z0 = 17880.5877  # subtract 20 from z0,y0
 
         else:
-            print "I cannot handle filter name="+self.filter_name
+            print "Sorry, I do not handle filter name="+self.filter_name
             return
 
         x1 = np.arange(1024.)
@@ -402,11 +402,11 @@ class NirspecHeader(object):
 
         # rhs_top=rhs_mid+0.5*(99.488-(1.0517*self.header['disppos']))
         # rhs_bot=rhs_mid-0.5*(99.488-(1.0517*self.header['disppos']))
+        date = self.header['DATE-OBS']
+        (y,m,d)=date.split('-')
 
-        if 'NIRSPEC-3' in self.filter_name:
-            lhs_top=lhs_top - 30
-            lhs_bot=lhs_bot - 30
-
+        print 'slitname=',self.header['slitname']
+        print 'filtername=',self.filter_name
         # if slit is "taller", account for that
         if '24' in self.header['slitname']:
             lhs_top += 20.
@@ -416,6 +416,11 @@ class NirspecHeader(object):
             lhs_top += 30.
             lhs_bot -= 30.
 
+        if int(y) < 2006 and ('NIRSPEC-3' in self.filter_name or 'NIRSPEC-1' in self.filter_name or 'NIRSPEC-5' in self.filter_name):
+            print 'here'
+            lhs_top=lhs_top - 50
+            lhs_bot=lhs_bot - 50
+
         # The starting wavelength solution drifts with order 
         c = 0.
 
@@ -423,7 +428,7 @@ class NirspecHeader(object):
             WL50 -= 137.  #
             WL50 = 0.96465 * WL50 + 412.67  # This might not work with new WL50 multiplier
 
-        elif order < 38:
+        if order < 38:
             c = 70.
         elif order < 40:
             c = 70.
