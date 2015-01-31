@@ -44,7 +44,6 @@ def shift_order(top_spectroid, avg_spectroid, bot_spectroid, padding):
         return top_spectroid, avg_spectroid, bot_spectroid, order_shifted
 
 def shift_order_back(top_spectroid, avg_spectroid, bot_spectroid, padding, order_shifted, lhs_bot):
-    print 'order_shifted=',order_shifted
     if order_shifted:
         # remove the padding and start at lhs_bot to show plots in correct place
         avg_spectroid = avg_spectroid - padding + lhs_bot
@@ -75,6 +74,7 @@ def median_comb(cslist):
 
     # images is a comma separated list of files to be median combined
     all_images = np.array(data_array)
+
     med_comb = np.median(all_images, axis=0)
 
     return med_comb
@@ -90,6 +90,18 @@ def arg_max_corr(a, b):
 
     if not a.shape == b.shape:
         raise ValueError('The 2 arrays need to be the same shape')
+
+    import pylab
+    #pylab.figure(2)
+    #pylab.clf()
+    #pylab.plot(np.correlate(a,b,mode='full'))
+
+    pylab.figure(3)
+    pylab.clf()
+    pylab.plot(b)
+    pylab.plot(a)
+    pylab.show()
+
 
     # Start by finding the coarse discretised arg_max
     coarse_max = np.argmax(np.correlate(a, b, mode='full')) - length + 1
@@ -189,7 +201,6 @@ def fit_poly(cm, xes='default', deg=4):
 
 
 def actual_to_theory(loc1, loc2, threshold='40'):
-    print 'threshold=',threshold
     if abs(loc1 - loc2) < threshold and loc1 > 1:
         return True
     else:
@@ -203,34 +214,31 @@ def get_actual_order_pos(edges, theory, sigma):
         from scipy.signal import argrelextrema
 
         # take a vertical cut of edges
-        magcrosscut = np.sum(edges[:, 0:10], axis=1)
+        magcrosscut = np.median(edges[:, 40:50], axis=1)
 
         import pylab as pl
-        print 'theory=',theory
-        pl.figure(6)
-        pl.clf()
-        pl.imshow(edges[:,0:10])
 
-        pl.figure(7)
-        pl.clf()
-        pl.plot(magcrosscut)
+        #pl.figure(7)
+        #pl.clf()
+        #pl.plot(magcrosscut)
 
         # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
         extrema = argrelextrema(magcrosscut, np.greater, order=35)[0]
 
         # find crosscut values at those extrema
         magcrosscutatextrema = magcrosscut[extrema]
-        pl.plot(extrema, magcrosscutatextrema,'r*')
-        #pl.show()
-        # narrow down extrema list to only ones over threshold
+        #pl.plot(extrema, magcrosscutatextrema,'r*')
+        # narrow down extrema list to only ones over sigma
+
         peaks = np.where(magcrosscutatextrema > sigma)
 
         actualpeaks = extrema[peaks[0]]
-        print 'actualpeaks=',actualpeaks
+        #pl.plot(actualpeaks, magcrosscut[actualpeaks], 'b*')
+        #pl.show()
+
         if actualpeaks.any():
             actual = min((abs(theory - i), i) for i in actualpeaks)[1]
         else:
             return -3000
 
-        print 'actual=',actual
         return actual

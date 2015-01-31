@@ -236,7 +236,7 @@ class SciArray(BaseArray):
         maxes = np.array(locpeaks[0][locmaxes[0]])
 
         deletelist = []
-        # remove 'close' real sky line values
+        # remove 'close' real sky line values - this is a hack
         for i in range(1, len(maxes)):
             if abs(maxes[i] - maxes[i - 1]) < 5:
                 deletelist.append(i)
@@ -264,7 +264,6 @@ class SciArray(BaseArray):
                 if badfit < 10:
                     skydict[fitnumber] = centroid_sky
                     fitnumber += 1
-                    # pl.plot(centroid_sky,'k')
                     if centroid_sky_sum.any():
                         centroid_sky_sum = centroid_sky_sum + centroid_sky - centroid_sky[0]
                     else:
@@ -373,8 +372,12 @@ class SciArray(BaseArray):
             sky = sky - np.median(sky)
             sky = sky
 
+        elif sky_height_top > 0. and len(sky2) > 1:
+            sky = sky2
+        elif sky_height_bot > 0. and len(sky1) > 1:
+            sky = sky1
         else:
-            sky = NirspecFudgeConstants.badval
+            sky = [NirspecFudgeConstants.badval]
 
         return sky
 

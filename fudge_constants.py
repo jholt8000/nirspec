@@ -12,7 +12,6 @@ class NirspecFudgeConstants(object):
     disp_upper_limit = 1.05
     badval = 9999
     max_shift_from_theory = 50.  # pixels
-    #ohdatfile_low_disp = 'lowd_ir_ohlines'
     ohdatfile_high_disp = '/net/filer2/vol/home/jholt/nirspec/nirspec_2015/ir_ohlines.dat'
     #ohdatfile_high_disp = 'ir_ohlines.dat'
     # used in nirspec_wavelength_utils identify
@@ -21,4 +20,4 @@ class NirspecFudgeConstants(object):
     sky_line_min = 10.
     # if theory if total_chip_padding  
     total_chip_padding = 20.
-    badfit_limit = 300.
+    badfit_limit = 200.

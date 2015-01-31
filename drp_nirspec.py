@@ -33,6 +33,11 @@ def main(datadir, outdir, utdate='default'):
     if datadir[-1] != '/':
         datadir += '/'
 
+    if not os.path.exists(outdir):
+        try: os.mkdir(outdir)
+        except: print 'cannot make outdir ',outdir
+        return
+
     startTime = datetime.now()
     if not os.path.exists(datadir):
         print 'no dir ' + datadir
@@ -75,6 +80,7 @@ def main(datadir, outdir, utdate='default'):
 
         if fitsfile.endswith('gz'):
             os.system('gunzip ' + fitsfile)
+
         fitsfile = fitsfile.rstrip('.gz')
         header = fits.getheader(fitsfile)
         try:
@@ -90,7 +96,7 @@ def main(datadir, outdir, utdate='default'):
             return
 
         if dispers == 'low':
-            print fitsfile + 'low dispersion'
+            print fitsfile + ' low dispersion'
             continue
             # science_files[fitsfile]=[]
         # make lists of all object (science) files and flat files in the directory
@@ -139,21 +145,33 @@ def main(datadir, outdir, utdate='default'):
     # return science_files, flat_files, dark_files
 
     for sfile in science_files.keys():
-        if len(science_files[name][2]) > 10:
-            flats = science_files[name][2][:10]
-        else:
-            flats = science_files[name][2]
-        if len(science_files[name][1]) > 10:
-            darks = science_files[name][1][:10]
-        else:
-            darks = science_files[name][1]
 
-        master_flat = astro_math.median_comb(flats)
-        master_dark = astro_math.median_comb(darks)
+        if len(science_files[sfile][2]) > 10:
+            flats = science_files[sfile][2][:10]
+        else:
+            flats = science_files[sfile][2]
+        if len(science_files[sfile][1]) > 10:
+            darks = science_files[sfile][1][:10]
+        else:
+            darks = science_files[sfile][1]
+
+        if len(flats) > 1:
+            master_flat = astro_math.median_comb(flats)
+        elif len(flats) == 1:
+            master_flat = fits.getdata(flats[0])
+        else:
+            print "cannot reduce"+sfile+" with no matching flat!"
+            continue
+        if len(darks) > 1:
+            master_dark = astro_math.median_comb(darks)
+        elif len(darks) == 1:
+            master_dark = fits.getdata(darks[0])
+        else:
+            master_dark = []
 
         if len(science_files[sfile]) > 1:
             # found matching
-            print 'starting reduction for science file ', sfile, ' using flat ',flats
+            print 'starting reduction for science file ', sfile, ' using flats ',flats
             filestart = datetime.now()
             if '1' in filname:
                 sky_distance = 4
@@ -161,16 +179,17 @@ def main(datadir, outdir, utdate='default'):
             else:
                 sky_distance = 5
                 sky_height = 5
-            try:
+            #try:
+            if True:
                 c = nirspecOO.Main(sfile, flat_array=master_flat, dark_array=master_dark, do_extract=True, verbose=True,
-                               show_plot=True,cosmic_clean=True, write_fits=False, write_plots=True, outpath=outdir,
+                               show_plot=False, cosmic_clean=True, write_fits=False, write_plots=True, outpath=outdir,
                                sky_distance=sky_distance, sky_height=sky_height,  max_iter=3, sig_clip=5.0, sig_frac=0.3,
                                obj_lim=5.0, ext_height=3, sky_sigma=2.25, traceWidth=10,
                                backgroundWidth=30,  traceMean=True, traceLast=False, traceDelta=1.9)
 
                 c.reduce_nirspec()
-            except:
-                print 'problem reducing file :',sfile
+            #except:
+            #    print 'problem reducing file :',sfile
 
             print datetime.now() - filestart
     print datetime.now() - startTime

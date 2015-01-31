@@ -16,6 +16,7 @@ Created on Thu Mar 28 10:30:41 2013
 import numpy as np
 from scipy import ndimage
 
+#ts,bft= spectroid.spectroid(flatob.tops, traceWidth=2, startingLocation=231)
 
 def spectroid(dataArray, traceWidth=10, backgroundWidth=30, startingLocation=926, traceMean=True,
               traceLast=False, traceDelta=1.9):

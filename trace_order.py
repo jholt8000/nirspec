@@ -90,9 +90,10 @@ class Trace(object):
         if lhs_top > lhs_bot:
 
             # # spectroid on top and bottom of order location #####
-            # call centroiding task, using the location of the peak and zero
+            # call centroiding task, usi.ng the location of the peak and zero
             # background subtraction
             # bft = bad fit top = number of times spectroid had to self-correct
+
             try:
                 top_spectroid, bft = spectroid(self.flatobj.tops, traceWidth=self.traceWidth,
                                                 backgroundWidth=self.backgroundWidth,
@@ -101,7 +102,7 @@ class Trace(object):
 
             except:
                 self.logger.error('Could not trace starting at '+str(lhs_top))
-                top_spectroid, bft = (0, 9999)
+                top_spectroid, bft = ([0], 9999)
 
             self.logger.info('had to self correct on top = ' + str(bft) + ' times ')
 
@@ -119,7 +120,7 @@ class Trace(object):
                                                 traceLast=self.traceLast, traceDelta=self.traceDelta)
             except:
                 self.logger.error('Could not trace starting at '+str(lhs_bot))
-                bot_spectroid, bfb = (0, 9999)
+                bot_spectroid, bfb = ([0], 9999)
 
             self.logger.info('had to self correct on bottom = ' + str(bfb) + ' times ')
 
@@ -139,11 +140,10 @@ class Trace(object):
                avg_spectroid = (top_spectroid + bot_spectroid) / 2.
             elif traced_top:
                 self.logger.info('using only top curve ')
-                avg_spectroid = top_spectroid - ((lhs_top - lhs_bot) / 2) + 1.
+                avg_spectroid = top_spectroid - ((lhs_top - self.lhs_bot_theory) / 2) + 1.
             elif traced_bot:
                 self.logger.info('using only bottom curve ')
-                avg_spectroid = bot_spectroid + ((lhs_top - lhs_bot) / 2) + 1.
-
+                avg_spectroid = bot_spectroid + ((self.lhs_top_theory - lhs_bot) / 2) + 1.
             else:
                 self.logger.info('could not trace order ' + str(self.order_num))
                 self.trace_success = False
@@ -183,9 +183,9 @@ class Trace(object):
             self.logger.info('  ---> this might affect the rectification')
 
             lhs_edge_pos = astro_math.get_actual_order_pos(edges, theory_lhs,
-                                                                     self.order_sigma / 3)
+                                                                     self.order_sigma / 2)
             found_top = astro_math.actual_to_theory(lhs_edge_pos, theory_lhs,
-                                                    self.order_threshold / 3)
+                                                    self.order_threshold * 2)
 
             if not found_top:
                 self.logger.info('Flat is too faint in this order ')

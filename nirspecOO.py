@@ -93,7 +93,7 @@ class Main():
     def __init__(self, sci_name, flat_name='', flat_array=[], dark_name='', dark_array=[], do_extract=True,\
                  do_darksub=True, show_plot=True, cosmic_clean=True, max_iter=3, sig_clip=5.0, sig_frac=0.3,\
                  obj_lim=5.0, ext_height=3, sky_distance=5, sky_height=5, rawpath='', outpath='', write_plots=False, \
-                 write_fits=False, sky_sigma=2.25, traceWidth=10, backgroundWidth=30, traceMean=True, traceLast=False,\
+                 write_fits=False, sky_sigma=2.25, traceWidth=2, backgroundWidth=30, traceMean=True, traceLast=False,\
                  traceDelta=1.9, verbose=True):
 
         """ Initialize reduction"""
@@ -189,16 +189,7 @@ class Main():
             flatObj.cosmic(sig_clip=self.sig_clip, sig_frac=self.sig_frac,
                                  obj_lim=self.obj_lim)
 
-        import pylab as pl
-        pl.figure(1)
-        pl.imshow(flatObj.data)
-        pl.figure(2)
-        pl.imshow(sciObj.data)
-        pl.figure(3)
-        pl.imshow(flatObj.tops)
-        pl.figure(4)
-        pl.imshow(flatObj.bots)
-        pl.show()
+
         # initialize variables and lists
         lhs_top = 0
         all_order_objects = []
@@ -217,6 +208,7 @@ class Main():
                                                              sky_height=self.sky_height, sky_sigma=self.sky_sigma, hdr_obj=self.nh,
                                                              sciobj=sciObj, flatobj=flatObj, sci_data=[], flat_data=[],
                                                              order_threshold=self.data_dict['order_threshold'],
+                                                             order_sigma = self.data_dict['order_sigma'],
                                                              do_extract=self.do_extract, padding=self.data_dict['padding'],
                                                              traceWidth=self.traceWidth, backgroundWidth=self.backgroundWidth,
                                                              traceMean=self.traceMean, traceLast=False, traceDelta=self.traceDelta)
@@ -249,10 +241,13 @@ class Main():
             order_number_array_stack = 1. / np.hstack(order_number_array)
             matched_sky_line_stack = np.hstack(matched_sky_line)
 
+
             p1, newoh, dataZZ = twod_lambda_fit.twodfit(np.array(orig_pix_x_stack),
                                          np.array(order_number_array_stack),
                                          np.array(matched_sky_line_stack), logger=self.logger,
                                          lower_len_points=10., sigma_max=0.3)
+
+
         else:
             p1 = []
 
@@ -262,9 +257,13 @@ class Main():
             newoh = twod_lambda_fit.applySolution(order_object, p1)
 
             # ## make plots and output FITS files
+
+                #this shouldn't be in a try, there should be len checking of each array while plotting
             self.nb.make_nirspec_final_FITS_and_plots(self, order_object, order_object.sciorder, order_object.lineobj,
                                                      order_object.flatobj, order_object.sciobj,
                                                       newoh)
+            #except:
+            #    print 'Problem making plots'
 
         self.logger.info('Finished quicklook reduction for science file ' + self.sciname)
 

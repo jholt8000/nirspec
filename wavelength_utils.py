@@ -59,15 +59,18 @@ class LineId(object):
             # match sky lines
             id_tuple = self.identify(self.ohx, self.ohy)
 
-            if len(id_tuple) > 0:
+            if id_tuple != None:
+              if len(id_tuple) > 0:
                 self.matchesdx, self.matchesohx, self.matchesohy, self.bigohx, self.bigohy, \
                 self.identify_status, self.matchesidx = id_tuple
-
+            else:
+                self.identify_status = 0
 
         if self.identify_status < 1:
             self.logger.info('wavelength utils: could not identify lines')
-            self.logger.info(' Removing xcorr shift ')
+
             if abs(self.lambda_shift) < nfc.max_shift_from_theory:
+                self.logger.info(' Removing xcorr shift ')
                 self.theory_x -= self.lambda_shift
 
     def read_OH(self, data_table='default', ohdatfile=''):
@@ -137,8 +140,11 @@ class LineId(object):
         return all_g
 
     def find_xcorr_shift(self, ohgs):
-        """ find shift between synthetic sky spectrum and real sky spectrum"""
-        self.sky = self.sky - self.sky.mean()
+        if len(self.sky) > 0:
+            """ find shift between synthetic sky spectrum and real sky spectrum"""
+            self.sky = self.sky - self.sky.mean()
+        else:
+            return 9999
 
         ohg = np.array([self.theory_x, ohgs])  # ohg is a synthetic spectrum of gaussians
         # at skylines in list
@@ -149,7 +155,8 @@ class LineId(object):
         try:
             xcorrshift = astro_math.arg_max_corr(ohg[1], self.sky)
         except:
-            self.logger.info('Could not find x-corr shift for arrays of shape '+str(len(ohg[1])+' and '+str(len(self.sky))))
+            self.logger.info('Could not find x-corr shift for arrays')
+            print len(ohg[1]), len(self.sky)
             xcorrshift=0
 
         delta_x = (ohg[0][-1] - ohg[0][0]) / float(ohg[0].size)

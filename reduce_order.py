@@ -38,7 +38,7 @@ class Reduce_order(object):
     #reduce each order found
 
     def __init__(self, order_num, logger = '', ext_height=3, sky_distance=5, sky_height=5, sky_sigma=2.25, hdr_obj='',\
-                 header = '', order_threshold=1000,\
+                 header = '', order_threshold=1000, order_sigma=10,
                  sciobj='', flatobj='', sci_data=[], flat_data=[], do_extract=True, padding=10,\
                  traceWidth=10, backgroundWidth=30, traceMean=True,\
                  traceLast=False, traceDelta=1.9):
@@ -80,6 +80,7 @@ class Reduce_order(object):
         self.sky_distance = sky_distance
         self.sky_height = sky_height
         self.sky_sigma = sky_sigma
+        self.order_sigma = order_sigma
 
         self.backgroundWidth = backgroundWidth
         self.traceMean = traceMean
@@ -150,7 +151,8 @@ class Reduce_order(object):
         if (self.lhs_top_theory < self.detector_height + NirspecFudgeConstants.total_chip_padding
             and self.lhs_bot_theory > -NirspecFudgeConstants.total_chip_padding):
 
-            traceobj = trace_order.Trace(self.lhs_top_theory, self.lhs_bot_theory,
+
+            traceobj = trace_order.Trace(self.lhs_top_theory, self.lhs_bot_theory, order_sigma=self.order_sigma,
                                                      order_threshold=self.order_threshold, order_num=self.order_num,
                                                      logger=self.logger, flatobj=self.flatobj, flat_data=[],
                                                      traceWidth=self.traceWidth,
@@ -164,7 +166,7 @@ class Reduce_order(object):
             self.logger.info('order: ' + str(self.order_num) + ' not on detector  ')
             self.lhs_top = self.lhs_top_theory
             # return to main and skip this order
-            return
+            return 0,0
 
         # # cut out order and spatially rectify ####
         if traceobj.trace_success:
@@ -178,7 +180,11 @@ class Reduce_order(object):
             self.padding = astro_math.fudge_padding(self.avg_spectroid, self.padding)
 
             # determine highest point to decide where to cut out the array to isolate order
-            highest_top = max(self.top_spectroid[0], self.top_spectroid[-10])
+            if len(self.top_spectroid) > 10:
+                highest_top = max(self.top_spectroid[0], self.top_spectroid[-10])
+            else:
+                fake_top = self.bot_spectroid + (self.lhs_top)  + 1.
+                highest_top = max(fake_top[0], fake_top[-10])
 
             # order_slice that contains only the cutout around the order
             sci_order_slice = self.sciobj.cut_out(padding=self.padding, lower=self.lhs_bot,
@@ -193,6 +199,7 @@ class Reduce_order(object):
                                                                                                 self.bot_spectroid,
                                                                                                 self.padding)
 
+            print 'order_shifted=',order_shifted
             # make instances of array manip class using just the order slice
             self.sciorder = array_manipulate.SciArray(sci_order_slice)
 

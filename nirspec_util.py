@@ -54,27 +54,27 @@ class NirspecBookkeeping(object):
             todo
 
         """
-        pl.figure(1)
-        pl.clf()
-        pl.title("Order=" + str(sciorder.order_num))
-        pl.plot(lineobj.theory_x, lineobj.sky, 'b', label='original theory sky')
-        if len(lineobj.bigohx) > 0:
-            for i in np.arange(0, len(lineobj.matchesohx)):
-                pl.text(lineobj.matchesohx[i], lineobj.sky.max() + 100, str(lineobj.matchesohx[i]),
-                        rotation='vertical', fontsize='x-small')
-            pl.plot(lineobj.bigohx, lineobj.bigohy, 'r+')
-            pl.plot(lineobj.matchesohx, np.array(lineobj.matchesohy), 'k+')
+        #pl.figure(1)
+        #pl.clf()
+        #pl.title("Order=" + str(sciorder.order_num))
+        #pl.plot(lineobj.theory_x, lineobj.sky, 'b', label='original theory sky')
+        #if len(lineobj.bigohx) > 0:
+        #    for i in np.arange(0, len(lineobj.matchesohx)):
+        #        pl.text(lineobj.matchesohx[i], lineobj.sky.max() + 100, str(lineobj.matchesohx[i]),
+        #                rotation='vertical', fontsize='x-small')
+        #    pl.plot(lineobj.bigohx, lineobj.bigohy, 'r+')
+        #    pl.plot(lineobj.matchesohx, np.array(lineobj.matchesohy), 'k+')
 
-        pl.legend(loc=4)
-        pl.xlabel("$\AA$")
-        if allreduceobj.write_plots:
-            pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
-                       bbox_inches=0)
+        #pl.legend(loc=4)
+        #pl.xlabel("$\AA$")
+        #if allreduceobj.write_plots:
+        #    pl.savefig(allreduceobj.outpath + allreduceobj.sciname + 'sky_order_' + str(sciorder.order_num) + '.png',
+        #               bbox_inches=0)
 
         pl.figure(2)
         pl.clf()
         pl.title("Order=" + str(sciorder.order_num))
-        if len(dx_2dfit) > 0:
+        if len(dx_2dfit) > 0 and len(lineobj.sky) == len(dx_2dfit):
             pl.plot(dx_2dfit, lineobj.sky, 'b', label='sky after 2dfit')
             if len(lineobj.bigohx) > 0:
                 for i in np.arange(0, len(lineobj.matchesohx)):
@@ -90,8 +90,8 @@ class NirspecBookkeeping(object):
             if allreduceobj.write_plots:
                 pl.savefig(allreduceobj.outpath + allreduceobj.sciname + '_sky_order_' + str(sciorder.order_num) + '.png',
                            bbox_inches=0)
-        if allreduceobj.write_fits:
-             fits.writeto(allreduceobj.outpath+allreduceobj.sciname+'_extracted_order_'+str(sciorder.order_num)+'.fits',
+            if allreduceobj.write_fits:
+                fits.writeto(allreduceobj.outpath+allreduceobj.sciname+'_extracted_order_'+str(sciorder.order_num)+'.fits',
                     np.array(dx_2dfit), allreduceobj.sciheader, output_verify='warn',clobber=True)
 
         pl.figure(3)
@@ -128,7 +128,7 @@ class NirspecBookkeeping(object):
                 pl.plot(dx_2dfit, sciorder.cont, 'r', label='avg of central rows')
                 pl.xlim([dx_2dfit[0], dx_2dfit[-1]])
             else:
-                pl.plot(lineobj.theory_x, sciorder.cont, 'r', label='avg of central rows')
+                pl.plot(sciorder.cont, 'r', label='avg of central rows')
             pl.subplot(212, sharex=ax1)
             pl.xlabel("$\mu$")
         else:
@@ -159,28 +159,27 @@ class NirspecBookkeeping(object):
             #    order_obj.top_spectroid = 0
 
 
-            pl.figure(15)
-            pl.clf()
-            pl.imshow(flatobj.tops, origin='lower')
-            pl.plot(10, order_obj.lhs_bot, 'c*')
-            pl.plot(10, order_obj.lhs_top, 'g*')
-            pl.plot(10, order_obj.lhs_top_theory, 'r+')
-            pl.plot(10, order_obj.lhs_bot_theory, 'r+')
-            pl.plot(order_obj.avg_spectroid, 'k', lw=2)
-            pl.plot(order_obj.top_spectroid, 'g', lw=2)
-            pl.plot(order_obj.bot_spectroid, 'g', lw=2)
+            #pl.figure(15)
+            #pl.clf()
+            #pl.imshow(flatobj.tops, origin='lower')
+            #pl.plot(10, order_obj.lhs_bot, 'c*')
+            #pl.plot(10, order_obj.lhs_top, 'g*')
+            #pl.plot(10, order_obj.lhs_top_theory, 'r+')
+            #pl.plot(10, order_obj.lhs_bot_theory, 'r+')
+            #pl.plot(order_obj.avg_spectroid, 'k', lw=2)
+            #pl.plot(order_obj.top_spectroid, 'g', lw=2)
+            #pl.plot(order_obj.bot_spectroid, 'g', lw=2)
 
-
-            pl.figure(16)
-            pl.clf()
-            pl.imshow(flatobj.bots, origin='lower')
-            pl.plot(10, order_obj.lhs_bot, 'c*')
-            pl.plot(10, order_obj.lhs_top, 'g*')
-            pl.plot(10, order_obj.lhs_top_theory, 'r+')
-            pl.plot(10, order_obj.lhs_bot_theory, 'r+')
-            pl.plot(order_obj.avg_spectroid, 'k', lw=2)
-            pl.plot(order_obj.top_spectroid, 'g', lw=2)
-            pl.plot(order_obj.bot_spectroid, 'g', lw=2)
+            #pl.figure(16)
+            #pl.clf()
+            #pl.imshow(flatobj.bots, origin='lower')
+            #pl.plot(10, order_obj.lhs_bot, 'c*')
+            #pl.plot(10, order_obj.lhs_top, 'g*')
+            #pl.plot(10, order_obj.lhs_top_theory, 'r+')
+            #pl.plot(10, order_obj.lhs_bot_theory, 'r+')
+            #pl.plot(order_obj.avg_spectroid, 'k', lw=2)
+            #pl.plot(order_obj.top_spectroid, 'g', lw=2)
+            #pl.plot(order_obj.bot_spectroid, 'g', lw=2)
 
             pl.figure(18)
             pl.clf()
@@ -292,34 +291,30 @@ class NirspecHeader(object):
             padding_modify = 1.0
 
         if 'NIRSPEC-1' in self.filter_name:
-            data_dict = {'filt': 1, 'startord': 80, 'padding': 0 * padding_modify, 'order_sigma': 1000, 'spw': 5.,
-                         'traceWidth': 1.5, 'order_threshold':20}
+            data_dict = {'filt': 1, 'startord': 80, 'padding': 0 * padding_modify, 'order_sigma': 300, 'spw': 5.,
+                         'traceWidth': 1.5, 'order_threshold':50}
         elif 'NIRSPEC-2' in self.filter_name:
-            data_dict = {'filt': 2, 'startord': 70, 'padding': 0 * padding_modify, 'order_sigma': 3000, 'spw': 5.,
-                         'traceWidth': 1.5,'order_threshold':20}
+            data_dict = {'filt': 2, 'startord': 70, 'padding': 0 * padding_modify, 'order_sigma': 300, 'spw': 5.,
+                         'traceWidth': 1.5,'order_threshold':50}
         elif 'NIRSPEC-3' in self.filter_name:
-            data_dict = {'filt': 3, 'startord': 67, 'padding': 0 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
-                         'traceWidth': 1.1,'order_threshold':20}
+            data_dict = {'filt': 3, 'startord': 67, 'padding': 10 * padding_modify, 'order_sigma': 300, 'spw': 3.,
+                         'traceWidth': 1.1,'order_threshold':50}
         elif 'NIRSPEC-4' in self.filter_name:
-            data_dict = {'filt': 4, 'startord': 61, 'padding': 10 + 5 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
+            data_dict = {'filt': 4, 'startord': 61, 'padding': 10 + 5 * padding_modify, 'order_sigma': 600, 'spw': 3.,
                          'traceWidth': 1.1,'order_threshold':20}
         elif 'NIRSPEC-5' in self.filter_name:
-            data_dict = {'filt': 5, 'startord': 53, 'padding': 10 + 5 * padding_modify, 'order_sigma': 10000, 'spw': 3.,
-                         'traceWidth': 1.1,'order_threshold':20}
+            data_dict = {'filt': 5, 'startord': 53, 'padding': 10 + 5 * padding_modify, 'order_sigma': 600, 'spw': 3.,
+                         'traceWidth': 1.1,'order_threshold':50}
         elif 'NIRSPEC-6' in self.filter_name:
-            data_dict = {'filt': 6, 'startord': 49, 'padding': 25, 'spw': 3., 'order_threshold': 20, 'traceWidth': 1.1,'order_sigma':1000}
+            data_dict = {'filt': 6, 'startord': 49, 'padding': 15, 'spw': 3., 'order_threshold': 20, 'traceWidth': 1.1,'order_sigma':500}
         elif 'NIRSPEC-7' in self.filter_name:
-            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'order_threshold': 20, 'spw': 3., 'traceWidth': 1.1,'order_sigma':1000}
+            data_dict = {'filt': 7, 'startord': 41, 'padding': 30, 'order_threshold': 20, 'spw': 3., 'traceWidth': 1.1,'order_sigma':100}
         else:
             data_dict = {'filt': self.filter_name, 'startord': 9999, 'padding': 9999, 'order_threshold': 9999, 'spw': 9999,
                          'traceWidth': 9999,'order_sigma':1000}
 
         if '24' in self.header['slitname']:
-            data_dict['order_threshold'] = 50
-            data_dict['order_threshold_faint_flat'] = 60
-        else:
-            data_dict['order_threshold'] = 40
-            data_dict['order_threshold_faint_flat'] = 40
+            data_dict['order_threshold'] = 30
 
         return data_dict
 
@@ -416,17 +411,29 @@ class NirspecHeader(object):
             lhs_top += 30.
             lhs_bot -= 30.
 
-        if int(y) < 2006 and ('NIRSPEC-3' in self.filter_name or 'NIRSPEC-1' in self.filter_name or 'NIRSPEC-5' in self.filter_name):
-            print 'here'
-            lhs_top=lhs_top - 50
-            lhs_bot=lhs_bot - 50
-
+        # something shifted in NIRSPEC ...2004 jun 24
+        if int(y) < 2004:
+            print 'Data from before 2004, applying 50 pixel shift'
+            lhs_top=lhs_top + 50
+            lhs_bot=lhs_bot + 50
+        elif 'NIRSPEC-6' in self.filter_name or 'NIRSPEC-5' in self.filter_name or 'NIRSPEC-4' in self.filter_name:
+            print 'applying 30 pixel shift'
+            lhs_top=lhs_top + 30
+            lhs_bot=lhs_bot + 30
+        elif 'NIRSPEC-3' in self.filter_name:
+            print 'applying 30 pixel shift'
+            #lhs_top=lhs_top + 50
+            #lhs_bot=lhs_bot + 50
         # The starting wavelength solution drifts with order 
         c = 0.
 
-        if order > 55:  # filter=3
-            WL50 -= 137.  #
-            WL50 = 0.96465 * WL50 + 412.67  # This might not work with new WL50 multiplier
+        if order > 55:
+            print 'adding 50 to wavelength range'
+            WL50 +=50.
+
+        #if order > 55:  # filter=3
+        #    WL50 -= 137.  #
+        #    WL50 = 0.96465 * WL50 + 412.67  # This might not work with new WL50 multiplier
 
         if order < 38:
             c = 70.
@@ -438,8 +445,8 @@ class NirspecHeader(object):
             c = 50.
         elif order < 55:
             c = 50.
-        else:
-            c = 20.
+        #else:
+        #    c = 20.
 
         WL50 += c
         # WL50 = multiplier * WL50

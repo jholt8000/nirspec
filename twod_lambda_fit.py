@@ -9,12 +9,12 @@ import pylab as pl
 import scipy
 import scipy.optimize
 
-from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
 import statsmodels.api as smapi
 from statsmodels.formula.api import ols
-
+import logging
+import nirspec_util
 
 # #******************************************************************************
 # #******************************************************************************
@@ -28,7 +28,7 @@ def __residual(params, f, x, y):
     return np.ravel(a0 + a1 * x + a2 * x ** 2 + a3 * y + a4 * x * y + a5 * (x ** 2) * y - f)
 
 
-def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
+def twodfit(dataX, dataY, dataZ, logger='', lower_len_points=10., sigma_max=0.5):
     """
 
     :param dataX: First independent variable
@@ -39,7 +39,13 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     :param sigma_max:
     :return:
     """
+    if len(dataX) < 6:
+        return [], [], []
+
     testing = True
+
+    if not isinstance(logger, logging.Logger):
+        logger = nirspec_util.NirspecBookkeeping.setup_logger('two_d_fit.log', '.', verbose=False)
 
     newoh = 9999
 
@@ -92,36 +98,17 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
     outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.icol(2)) if t < 0.9)
     #print 'outliers=',list(outliers)
     x=list(outliers)
-    print 'resid outliers=',x
+    logger.info('residual outliers='+str(x))
     xhap=0
 
     for j in range(len(x)):
-        print 'outliers = ',dataX_new[x[j][0]-xhap], 1/dataY_new[x[j][0]-xhap], dataZ_new[x[j][0]-xhap]
-        print 'dataZ value = ',dataZ[x[j][0]]
-        print 'deleting ',dataZ_new[x[j][0]-xhap],x[j][0]-xhap,residual[x[j][0]]
-        print dataZ_new
+        logger.info('deleting outlier = '+str(dataX_new[x[j][0]-xhap])+' order = ' +str(1/dataY_new[x[j][0]-xhap])+' wavelength = '+str(dataZ_new[x[j][0]-xhap]))
         dataZ_new = np.delete(dataZ_new, x[j][0]-xhap)
-        print 'after ',dataZ_new
         dataX_new = np.delete(dataX_new, x[j][0]-xhap)
         dataY_new = np.delete(dataY_new, x[j][0]-xhap)
 
-        print xhap
-        print x[j][0]
         xhap+=1
 
-
-    dataX_new_forplot = np.copy(dataX_new)
-    dataY_new_forplot = np.copy(dataY_new)
-    dataZ_new_forplot = np.copy(dataZ_new)
-    print len(dataX), len(dataX_new), len(dataX_new_forplot)
-
-    pl.figure(4)
-    pl.clf()
-    pl.plot(residual,'b*')
-    residual2 = __residual(p1, dataZ_new, dataX_new, dataY_new)
-    pl.plot(residual,'r+')
-    #pl.plot(x.T(),'rx')
-    #pl.show()
 
     happened=0
     while len(dataZ_new) > lower_len_points - 1. and sigma > sigma_max:
@@ -137,21 +124,14 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
         outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.icol(2)) if t < 0.9)
         #print 'outliers=',list(outliers)
         x=list(outliers)
-        print 'resid outliers=',x
         xhap=0
 
         for j in range(len(x)):
-            print 'outliers = ',dataX_new[x[j][0]-xhap], 1/dataY_new[x[j][0]-xhap], dataZ_new[x[j][0]-xhap]
-            print 'dataZ value = ',dataZ[x[j][0]]
-            print 'deleting ',dataZ_new[x[j][0]-xhap],x[j][0]-xhap,residual[x[j][0]]
-            print dataZ_new
+            logger.info('deleting outlier = '+str(dataX_new[x[j][0]-xhap])+' order = ' +str(1/dataY_new[x[j][0]-xhap])+' wavelength = '+str(dataZ_new[x[j][0]-xhap]))
             dataZ_new = np.delete(dataZ_new, x[j][0]-xhap)
-            print 'after ',dataZ_new
             dataX_new = np.delete(dataX_new, x[j][0]-xhap)
             dataY_new = np.delete(dataY_new, x[j][0]-xhap)
 
-            print xhap
-            print x[j][0]
             xhap+=1
 
         dataX_new_forplot = np.copy(dataX_new)
@@ -161,14 +141,6 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
         newoh = np.ravel(p1[0] + p1[1] * dataX_new + p1[2] * dataX_new ** 2 + p1[3] * dataY_new + p1[4] * dataX_new * dataY_new + p1[5] * (
             dataX_new ** 2) * dataY_new)
 
-        #residual = __residual(p1, dataZ_new, dataX_new, dataY_new)
-        #x_res = np.arange(len(residual))
-        #regression = ols("data ~ x_res", data=dict(data=residual, x=x_res)).fit()
-        #test = regression.outlier_test()
-
-        #outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.icol(2)) if t < 0.9)
-        #print 'outliers=',list(outliers)
-
         if (len(dataZ_new) > len(p0)) and pcov is not None:
 
             if testing:
@@ -176,7 +148,6 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
                 ax2.plot(__residual(p1, dataZ_new_forplot, dataX_new_forplot, dataY_new_forplot),
                          points[k], __residual(p1, dataZ_new_forplot, dataX_new_forplot, dataY_new_forplot), lines[k],
                          label=str(k) + ' fit')
-                #ax3.plot(list(outliers), 'r*')
 
 
             residual = np.abs(__residual(p1, dataZ_new, dataX_new, dataY_new))
@@ -189,19 +160,16 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
         if sigma > sigma_max and len(dataZ_new) > lower_len_points:
 
             bad_points.append(residual.argmax())
-            logger.info('stddev=' + str(sigma))
-            # logger.info('removed matched oh line from order '+str(1./dataY_new[residuals.argmax()]))
-            # logger.info('removed matched oh line from fit '+str(dataX_new[residuals.argmax()]))
-            # logger.info('removed matched oh line from fit '+str(dataZ_new[residuals.argmax()]))
-            # print 'index = ',residuals.argmax(),' residual = ',residuals[residuals.argmax()]
+            logger.info('sigma=' + str(sigma))
+
             if testing:
                 dataZ_new_forplot[residual.argmax()-happened ] = dataZ_new_forplot[residual.argmin()]
                 dataX_new_forplot[residual.argmax()-happened ] = dataX_new_forplot[residual.argmin()]
                 dataY_new_forplot[residual.argmax()-happened ] = dataY_new_forplot[residual.argmin()]
 
 
-            print 'removing residual val=',residual[residual.argmax()],'index=', residual.argmax(),'happened=',happened,'real i=',residual.argmax()-happened
-            print 'datax=',dataX_new[residual.argmax()],'datay=',1/dataY_new[residual.argmax()],'dataz=',dataZ_new[residual.argmax()]
+            #logger.info('removing residual val='+str(residual[residual.argmax()])+' index = '+str(residual.argmax()))
+            #logger.info(' removing datax='+str(dataX_new[residual.argmax()])+' datay='+str(1/dataY_new[residual.argmax()])+' dataz=',dataZ_new[residual.argmax()])
 
             dataZ_new = np.delete(dataZ_new, residual.argmax())
             dataX_new = np.delete(dataX_new, residual.argmax())
@@ -215,11 +183,14 @@ def twodfit(dataX, dataY, dataZ, logger, lower_len_points=10., sigma_max=0.5):
 
         k += 1
 
-    # logger.info('sigma='+str(sigma))
-    #logger.info('std_error for each parameter=' + str(std_error))
+    logger.info('sigma='+str(sigma))
+
+    logger.info('final wavelength solution = '+str(p1[0])+' + '+str(p1[1])+' * pixel + '+str(p1[2])+'* pixel ** 2 +'+\
+                str(p1[3])+' * (1/order) + '+str(p1[4])+" * pixel * (1/order) * " + str(p1[5])+" * (pixel ** 2) * (1/order)")
 
     dataZZ = p1[0] + p1[1] * dataXX + p1[2] * dataXX ** 2 + p1[3] * dataYY + p1[4] * dataXX * dataYY + p1[5] * (
         dataXX ** 2) * dataYY
+
     if testing:
         ax2.legend()
         pl.show()
